@@ -1,0 +1,42 @@
+{
+  "name": "safemarket-protocol",
+  "version": "0.0.0",
+  "description": "",
+  "main": "Gruntfile.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "amorph-base58": "^1.0.0",
+    "amorph-bignumber": "^1.0.0",
+    "amorph-buffer": "^1.1.1",
+    "amorph-hex": "^1.0.2",
+    "babel-eslint": "^7.1.1",
+    "bignumber": "^1.1.0",
+    "chai": "^3.5.0",
+    "chai-amorph": "0.0.2",
+    "chai-as-promised": "^6.0.0",
+    "chai-bignumber": "^2.0.0",
+    "chai-web3-bindings": "^0.1.2",
+    "eslint": "^3.14.1",
+    "eslint-config-airbnb": "^14.0.0",
+    "eslint-config-airbnb-lite": "^1.0.4",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2",
+    "eslint-plugin-react": "^6.9.0",
+    "ethereumjs-testrpc": "^3.0.3",
+    "glob-fs": "^0.1.6",
+    "grunt": "^1.0.1",
+    "grunt-contrib-clean": "^1.0.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-mocha-test": "^0.13.2",
+    "grunt-solc": "^2.0.0",
+    "mocha": "^3.2.0",
+    "solc": "^0.4.8",
+    "solidity-sha3": "^0.4.1",
+    "ultralightbeam": "^0.14.2"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,26 @@
+{
+    "extends": "airbnb/base",
+    "rules": {
+    	"no-param-reassign": "off",
+    	"no-alert": "off",
+    	"arrow-body-style": [2, "always"],
+        "comma-dangle": [2, "never"],
+        "consistent-return": "off",
+        "padded-blocks": "off",
+        "max-len": [1],
+        "semi": [2, "never"],
+        "object-shorthand": "off",
+        "no-use-before-define": [1],
+        "new-cap": [1],
+        "prefer-rest-params": [1],
+        "import/no-extraneous-dependencies": "off",
+        "no-underscore-dangle": "off",
+        "no-unused-vars": "warn",
+        "no-use-before-define": "off",
+        "no-debugger": "warn"
+    },
+    "globals": {
+        "window": true,
+        "localStorage": true
+    }
+}
