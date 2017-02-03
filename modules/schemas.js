@@ -32,6 +32,7 @@ Schema.prototype.download = function download(func) {
 function StructArray(name, variables) {
   this.name = name
   this.variables = {}
+  this.state = []
   variables.forEach((variable) => {
     variable.getKey = function getKey(index) {
       return new Amorph(soliditySha3.default(`${name}_${variable.name}`, index), 'hex.prefixed')
@@ -102,7 +103,7 @@ Variable.prototype.download = function download(func) {
 }
 
 Variable.prototype.upload = function upload(state, func) {
-  if (this.state.equals(state)) {
+  if (this.state && this.state.equals(state)) {
     return Q.resolve()
   }
   return func(`set_${this.type}(bytes32,${this.type})`, [

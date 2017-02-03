@@ -34,31 +34,31 @@ describe('store', () => {
       })
   })
 
-  describe('download', () => {
-    it('should download', () => {
-      return schemas.Store.download((method, args) => {
-        return store.fetch(method, args)
-      })
-    })
-    it('should have all the keys', () => {
-      schemas.Store.state.should.have.keys(Object.keys(schemas.Store.schemas))
-    })
-    it('products/transports should have length of 0', () => {
-      schemas.Store.state.products.should.have.length(0)
-      schemas.Store.state.transports.should.have.length(0)
-    })
-  })
+  // describe('download', () => {
+  //   it('should download', () => {
+  //     return schemas.Store.download((method, args) => {
+  //       return store.fetch(method, args)
+  //     })
+  //   })
+  //   it('should have all the keys', () => {
+  //     schemas.Store.state.should.have.keys(Object.keys(schemas.Store.schemas))
+  //   })
+  //   it('products/transports should have length of 0', () => {
+  //     schemas.Store.state.products.should.have.length(0)
+  //     schemas.Store.state.transports.should.have.length(0)
+  //   })
+  // })
 
   describe('upload', () => {
     it('should upload', () => {
       return schemas.Store.upload({
         isOpen: new Amorph(true, 'boolean'),
         currency: new Amorph('USD', 'ascii'),
-        bufferMicroperun: new Amorph(MICRO.pow(-1).times(.5), 'bignumber'),
+        bufferMicroperun: new Amorph(MICRO.pow(-1).times(0.5), 'bignumber'),
         disputeSeconds: new Amorph(60, 'number'),
         minProductsTotal: new Amorph(50, 'number'),
         affiliateFeeMicroperun: new Amorph(
-          MICRO.pow(-1).times(.03), 'bignumber'
+          MICRO.pow(-1).times(0.03), 'bignumber'
         ),
         metaMultihash: new Amorph('deadbeef', 'hex'),
         products: [
