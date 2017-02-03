@@ -27,7 +27,7 @@ const ultralightbeam = new Ultralightbeam(provider, {
           return Q.reject(new Error('Exceeds block limit'))
         }
         transactionRequest.set('gas', gas.as('bignumber', (bn) => {
-          const _gas = bn.times(1.5).floor()
+          const _gas = bn.times(2).floor()
           if (_gas.gt(gasLimit)) {
             return new BigNumber(gasLimit)
           }

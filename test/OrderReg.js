@@ -136,39 +136,8 @@ describe('OrderReg', () => {
           order.status.should.amorphEqual(STATUS.CANCELLED)
         })
       })
-      it('end test', () => {
-        throw Error('end test')
-      })
-    })
-    describe('as store', () => {
-      let orderId
-      it('should create an order', () => {
-        return createOrder(orderReg, store).then((_orderId) => {
-          orderId = _orderId
-        })
-      })
-      it('should be rejected from the wrong persona', () => {
-        return orderReg.broadcast('setStatusAsCancelled(uint256)', [orderId], { from: personas[1] }).getTransaction().should.be.rejectedWith(Error)
-      })
-      it('status should be STATUS.PROCESSING', () => {
-        return getOrder(orderReg, orderId).then((order) => {
-          order.status.should.amorphEqual(STATUS.PROCESSING)
-        })
-      })
-      it('should be allowed from buyer', () => {
-        return orderReg.broadcast('setStatusAsCancelled(uint256)', [orderId], { from: personas[0] }).getTransaction()
-      })
-      it('status should be STATUS.CANCELLED', () => {
-        return getOrder(orderReg, orderId).then((order) => {
-          order.status.should.amorphEqual(STATUS.CANCELLED)
-        })
-      })
-      it('end test', () => {
-        throw Error('end test')
-      })
     })
   })
-
 })
 
 function createOrder(orderReg, store) {

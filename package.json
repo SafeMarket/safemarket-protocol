@@ -36,7 +36,7 @@
     "mocha": "^3.2.0",
     "solc": "^0.4.8",
     "solidity-sha3": "^0.4.1",
-    "ultralightbeam": "^0.14.2"
+    "ultralightbeam": "^0.15.0"
   },
   "dependencies": {}
 }
