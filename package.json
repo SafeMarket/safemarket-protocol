@@ -4,7 +4,7 @@
   "description": "",
   "main": "Gruntfile.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --require modules/chai --bail --timeout 10000"
   },
   "author": "",
   "license": "MIT",
@@ -38,5 +38,7 @@
     "solidity-sha3": "^0.4.1",
     "ultralightbeam": "^0.15.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "amorph-parse-solc-output": "^0.1.0"
+  }
 }
