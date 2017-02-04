@@ -141,7 +141,7 @@ const Store = new Schema([
 const Arbitrator = new Schema([
   new Variable('address', 'orderReg'),
   new Variable('bool', 'isOpen'),
-  new Variable('bytes4', 'currency'),
+  new Variable('bytes32', 'currency'),
   new Variable('uint256', 'feeBase'),
   new Variable('uint256', 'feeMicroperun'),
   new Variable('bytes', 'metaMultihash')
