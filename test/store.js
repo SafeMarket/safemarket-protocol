@@ -104,7 +104,7 @@ describe('store', () => {
       schemas.Store.state.disputeSeconds.to('number').should.equal(60)
       schemas.Store.state.minProductsTotal.to('number').should.equal(50)
       schemas.Store.state.affiliateFeeMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(.03),
-      schemas.Store.state.metaMultihash.to('hex').should.equal('deadbeef')
+      schemas.Store.state.metaMultihash.to('hex').indexOf('deadbeef').should.equal(0)
       schemas.Store.state.products.should.have.length(3)
       schemas.Store.state.transports.should.have.length(2)
       schemas.Store.state.products[0].isArchived.to('boolean').should.equal(false)

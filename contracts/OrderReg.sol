@@ -63,6 +63,7 @@ contract OrderReg is owned {
     uint256 affiliateFeeMicroperun;
     uint256 transportId;
     uint256 transportPrice;
+    bytes32 metaMultihash;
     uint256 prebufferCURR;
     bool isStorePayedOut;
     bool isBuyerPayedOut;
@@ -155,6 +156,7 @@ contract OrderReg is owned {
     orderInfoBs[orderId].affiliateFeeMicroperun = kv(store).get_uint256('affiliateFeeMicroperun');
     orderInfoBs[orderId].transportId = transportId;
     orderInfoBs[orderId].transportPrice = kv(store).get_uint256(sha3('transports_price', transportId));
+    orderInfoBs[orderId].metaMultihash = kv(store).get_bytes32('metaMultihash');
 
     for(var i = 0; i < productIds.length; i ++) {
       uint256 productId = productIds[i];

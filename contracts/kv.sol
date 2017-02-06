@@ -16,12 +16,6 @@ contract kv is owned{
       get_bool[key] = value;
     }
 
-    mapping(bytes32 => bytes) public get_bytes;
-
-    function set_bytes(bytes32 key, bytes value) onlyowner(msg.sender){
-      get_bytes[key] = value;
-    }
-
     mapping(bytes32 => bytes32) public get_bytes32;
 
     function set_bytes32(bytes32 key, bytes32 value) onlyowner(msg.sender){
