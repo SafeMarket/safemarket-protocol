@@ -112,6 +112,49 @@ describe('OrderReg', () => {
     })
   })
 
+  describe('trackers', () => {
+
+    it('ordersByBuyer should have count of 1', () => {
+      return orderReg.fetch('ordersByBuyerCount(address)', [personas[0].address]).should.eventually.amorphTo('number').equal(1)
+    })
+    it('ordersByBuyer[0] should equal 0', () => {
+      return orderReg.fetch('ordersByBuyer(address,uint256)', [
+        personas[0].address, new Amorph(0, 'number')
+      ]).should.eventually.amorphTo('number').equal(0)
+    })
+
+    it('ordersByStore should have count of 1', () => {
+      return orderReg.fetch('ordersByStoreCount(address)', [store.address]).should.eventually.amorphTo('number').equal(1)
+    })
+    it('ordersByStore[0] should equal 0', () => {
+      return orderReg.fetch('ordersByStore(address,uint256)', [
+        store.address, new Amorph(0, 'number')
+      ]).should.eventually.amorphTo('number').equal(0)
+    })
+
+    it('should create another order', () => {
+      return createOrder(orderReg, store)
+    })
+
+    it('ordersByBuyer should have count of 2', () => {
+      return orderReg.fetch('ordersByBuyerCount(address)', [personas[0].address]).should.eventually.amorphTo('number').equal(2)
+    })
+    it('ordersByBuyer[1] should equal 1', () => {
+      return orderReg.fetch('ordersByBuyer(address,uint256)', [
+        personas[0].address, new Amorph(1, 'number')
+      ]).should.eventually.amorphTo('number').equal(1)
+    })
+
+    it('ordersByStore should have count of 2', () => {
+      return orderReg.fetch('ordersByStoreCount(address)', [store.address]).should.eventually.amorphTo('number').equal(2)
+    })
+    it('ordersByStore ordersByStore[1] should equal 1', () => {
+      return orderReg.fetch('ordersByStore(address,uint256)', [
+        store.address, new Amorph(1, 'number')
+      ]).should.eventually.amorphTo('number').equal(1)
+    })
+  })
+
   describe('cancellation', () => {
     describe('as buyer', () => {
       let orderId
@@ -175,10 +218,8 @@ function getOrder(orderReg, id) {
     updates: []
   }
   return Q.all([
-    orderReg.fetch('orders(uint256)', [id]),
-    orderReg.fetch('ordersStoreInfo(uint256)', [id]),
-    orderReg.fetch('ordersPayoutInfo(uint256)', [id]),
-    orderReg.fetch('ordersCartInfo(uint256)', [id])
+    orderReg.fetch('orderInfoAs(uint256)', [id]),
+    orderReg.fetch('orderInfoBs(uint256)', [id])
   ]).then((orders) => {
     orders.forEach((_order) => {
       _.merge(order, _order)

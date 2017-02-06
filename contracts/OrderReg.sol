@@ -41,39 +41,34 @@ contract OrderReg is owned {
     ticker = _ticker;
   }
 
-  struct StoreInfo {
+// in order to prevent stack depth issues, OrderInfo is split into OrderInfoA and OrderInfoB
+
+  struct OrderInfoA {
+    uint256 createdAt;
+    uint256 shippedAt;
+    address buyer;
+    address store;
+    address arbitrator;
+    address affiliate;
+    STATUS status;
+    uint256 receivedWEI;
+    uint256 updatesCount;
+    uint256 productsCount;
+  }
+
+  struct OrderInfoB {
     bytes32 currency;
     uint256 bufferMicroperun;
     uint256 disputeSeconds;
     uint256 affiliateFeeMicroperun;
-  }
-
-  struct CartInfo {
     uint256 transportId;
     uint256 transportPrice;
     uint256 prebufferCURR;
-  }
-
-  struct PayoutInfo {
     bool isStorePayedOut;
     bool isBuyerPayedOut;
     uint256 storePayoutMicroperun;
     uint256 storePayoutWEI;
     uint256 arbitratorPayoutWEI;
-  }
-
-  struct Order {
-    uint256 createdAt;
-    uint256 shippedAt;
-    address buyer;
-    kv store;
-    kv arbitrator;
-    address affiliate;
-    STATUS status;
-    uint256 storePayoutMicroperun; // what percent of prebuffer gets sent to store (arbitrator can decrease)
-    uint256 receivedWEI;
-    uint256 updatesCount;
-    uint256 productsCount;
   }
 
   struct Product {
@@ -88,12 +83,18 @@ contract OrderReg is owned {
     uint256 timestamp;
   }
 
-  mapping(uint256 => Order) public orders;
+  mapping(uint256 => OrderInfoA) public orderInfoAs;
+  mapping(uint256 => OrderInfoB) public orderInfoBs;
   mapping(uint256 => Product[]) public ordersProducts;
   mapping(uint256 => Update[]) public ordersUpdates;
-  mapping(uint256 => StoreInfo) public ordersStoreInfo;
-  mapping(uint256 => CartInfo) public ordersCartInfo;
-  mapping(uint256 => PayoutInfo) public ordersPayoutInfo;
+  mapping(address => uint256[]) public ordersByBuyer;
+  mapping(address => uint256) public ordersByBuyerCount;
+  mapping(address => uint256[]) public ordersByStore;
+  mapping(address => uint256) public ordersByStoreCount;
+  mapping(address => uint256[]) public ordersByArbitrator;
+  mapping(address => uint256) public ordersByArbitratorCount;
+  mapping(address => uint256[]) public ordersByAffiliate;
+  mapping(address => uint256) public ordersByAffiliateCount;
 
   function ordersProducts(uint256 orderId, uint256 productIndex) constant returns(uint256 id, uint256 price, uint256 quantity){
     Product product = ordersProducts[orderId][productIndex];
@@ -108,8 +109,8 @@ contract OrderReg is owned {
   uint256 public ordersCount;
 
   function create(
-    kv store,
-    kv arbitrator,
+    address store,
+    address arbitrator,
     address affiliate,
     uint256[] productIds,
     uint256[] productQuantities,
@@ -119,78 +120,87 @@ contract OrderReg is owned {
     orderId = ordersCount;
     ordersCount += 1;
 
-    Order order = orders[orderId];
-    StoreInfo storeInfo = ordersStoreInfo[orderId];
-    CartInfo cartInfo = ordersCartInfo[orderId];
+    ordersByBuyer[msg.sender].push(orderId);
+    ordersByBuyerCount[msg.sender] += 1;
 
-    if (!store.get_bool('isOpen')) {
+    ordersByStore[store].push(orderId);
+    ordersByStoreCount[store] += 1;
+
+    if (arbitrator != address(0)) {
+      ordersByArbitrator[arbitrator].push(orderId);
+      ordersByArbitratorCount[arbitrator] += 1;
+    }
+
+    if (affiliate != address(0)) {
+      ordersByAffiliate[affiliate].push(orderId);
+      ordersByAffiliateCount[affiliate] += 1;
+    }
+
+    if (!kv(store).get_bool('isOpen')) {
       throw;
     }
 
-    order.createdAt = now;
-    order.status = STATUS.PROCESSING;
-    order.storePayoutMicroperun = 1 * MICRO;
+    orderInfoAs[orderId].createdAt = now;
+    orderInfoAs[orderId].status = STATUS.PROCESSING;
+    orderInfoBs[orderId].storePayoutMicroperun = 1 * MICRO;
 
-    order.buyer = msg.sender;
-    order.store = store;
-    order.arbitrator = arbitrator;
-    order.affiliate = affiliate;
-    order.productsCount = productIds.length;
+    orderInfoAs[orderId].buyer = msg.sender;
+    orderInfoAs[orderId].store = store;
+    orderInfoAs[orderId].arbitrator = arbitrator;
+    orderInfoAs[orderId].affiliate = affiliate;
+    orderInfoAs[orderId].productsCount = productIds.length;
 
-    storeInfo.currency = store.get_bytes32('currency');
-    storeInfo.bufferMicroperun = kv(store).get_uint256('bufferMicroperun');
-    storeInfo.affiliateFeeMicroperun = kv(store).get_uint256('affiliateFeeMicroperun');
-
-    cartInfo.transportId = transportId;
-    cartInfo.transportPrice = kv(store).get_uint256(sha3('transports_price', transportId));
+    orderInfoBs[orderId].currency = kv(store).get_bytes32('currency');
+    orderInfoBs[orderId].bufferMicroperun = kv(store).get_uint256('bufferMicroperun');
+    orderInfoBs[orderId].affiliateFeeMicroperun = kv(store).get_uint256('affiliateFeeMicroperun');
+    orderInfoBs[orderId].transportId = transportId;
+    orderInfoBs[orderId].transportPrice = kv(store).get_uint256(sha3('transports_price', transportId));
 
     for(var i = 0; i < productIds.length; i ++) {
       uint256 productId = productIds[i];
-      if(order.store.get_bool(sha3('products_isArchived', productId))) {
+      if(kv(orderInfoAs[orderId].store).get_bool(sha3('products_isArchived', productId))) {
         throw;
       }
       uint256 productQuantity = productQuantities[i];
-      uint256 productPrice = order.store.get_uint256(sha3('products_price', productId));
+      uint256 productPrice = kv(orderInfoAs[orderId].store).get_uint256(sha3('products_price', productId));
 
       ordersProducts[orderId].push(Product(productId, productPrice, productQuantity));
-      order.store.decrement_uint256(sha3('products_quantity', productId), productQuantity);
+      kv(orderInfoAs[orderId].store).decrement_uint256(sha3('products_quantity', productId), productQuantity);
 
-      cartInfo.prebufferCURR +=  productQuantity * productPrice;
+      orderInfoBs[orderId].prebufferCURR +=  productQuantity * productPrice;
     }
 
     // this is before transport has been added
-    if(cartInfo.prebufferCURR < order.store.get_uint256('minProductsTotal')) {
+    if(orderInfoBs[orderId].prebufferCURR < kv(orderInfoAs[orderId].store).get_uint256('minProductsTotal')) {
       throw;
     }
 
-    cartInfo.prebufferCURR += cartInfo.transportPrice;
+    orderInfoBs[orderId].prebufferCURR += orderInfoBs[orderId].transportPrice;
 
-    uint256 prebufferWEI = cartInfo.prebufferCURR * ticker.prices(storeInfo.currency);
-    uint256 bufferWEI = (prebufferWEI * order.store.get_uint256('bufferMicroperun')) / MICRO;
+    uint256 prebufferWEI = orderInfoBs[orderId].prebufferCURR * ticker.prices(orderInfoBs[orderId].currency);
+    uint256 bufferWEI = (prebufferWEI * kv(orderInfoAs[orderId].store).get_uint256('bufferMicroperun')) / MICRO;
 
-    order.receivedWEI = msg.value;
+    orderInfoAs[orderId].receivedWEI = msg.value;
 
-    if(order.receivedWEI < (prebufferWEI + bufferWEI)) {
+    if(orderInfoAs[orderId].receivedWEI < (prebufferWEI + bufferWEI)) {
       throw;
     }
   }
 
 
   function _setStatus(uint256 orderId, STATUS status) internal {
-    Order order = orders[orderId];
-    orders[orderId].status = status;
-    orders[orderId].updatesCount += 1;
+    orderInfoAs[orderId].status = status;
+    orderInfoAs[orderId].updatesCount += 1;
     ordersUpdates[orderId].push(Update(status, msg.sender, now));
   }
 
   function setStatusAsCancelled(uint256 orderId) {
-    Order order = orders[orderId];
-    if (msg.sender == address(order.store)) {
+    if (msg.sender == orderInfoAs[orderId].store) {
       _setStatus(orderId, STATUS.CANCELLED);
       return;
     }
-    if (msg.sender == order.buyer) {
-      if (order.status != STATUS.PROCESSING) {
+    if (msg.sender == orderInfoAs[orderId].buyer) {
+      if (orderInfoAs[orderId].status != STATUS.PROCESSING) {
         throw;
       }
       _setStatus(orderId, STATUS.CANCELLED);
@@ -200,27 +210,25 @@ contract OrderReg is owned {
   }
 
   function setStatusAsShipped(uint256 orderId) {
-    Order order = orders[orderId];
-    if (order.status != STATUS.PROCESSING) {
+    if (orderInfoAs[orderId].status != STATUS.PROCESSING) {
       throw;
     }
-    if (msg.sender != address(order.store)) {
+    if (msg.sender != orderInfoAs[orderId].store) {
       throw;
     }
     _setStatus(orderId, STATUS.SHIPPED);
-    order.shippedAt = now;
+    orderInfoAs[orderId].shippedAt = now;
   }
 
   function setStatusAsDisputed(uint256 orderId) {
-    Order order = orders[orderId];
-    if (order.status != STATUS.SHIPPED) {
+    if (orderInfoAs[orderId].status != STATUS.SHIPPED) {
       throw;
     }
-    if (msg.sender != order.buyer) {
+    if (msg.sender != orderInfoAs[orderId].buyer) {
       throw;
     }
     // TODO: overflow protection
-    if (now > (order.shippedAt + ordersStoreInfo[orderId].disputeSeconds)) {
+    if (now > (orderInfoAs[orderId].shippedAt + orderInfoBs[orderId].disputeSeconds)) {
       // in case of no arbitrator, disputeSeconds will be 0
       throw;
     }
@@ -228,74 +236,70 @@ contract OrderReg is owned {
   }
 
   function setStatusAsDisputeResolved(uint256 orderId, uint256 storePayoutMicroperun) {
-    Order order = orders[orderId];
-    if (order.status != STATUS.DISPUTED) {
+    if (orderInfoAs[orderId].status != STATUS.DISPUTED) {
       throw;
     }
-    if (msg.sender != address(order.arbitrator)) {
+    if (msg.sender != orderInfoAs[orderId].arbitrator) {
       throw;
     }
     if (storePayoutMicroperun > (1 * MICRO)) {
       throw;
     }
-    order.storePayoutMicroperun = storePayoutMicroperun;
+    orderInfoBs[orderId].storePayoutMicroperun = storePayoutMicroperun;
     _setStatus(orderId, STATUS.DISPUTE_RESOLVED);
 
   }
 
   function setStatusAsFinalized(uint256 orderId) {
-    Order order = orders[orderId];
-    if (order.status == STATUS.PROCESSING) {
+    if (orderInfoAs[orderId].status == STATUS.PROCESSING) {
       throw;
     }
-    if (order.status == STATUS.DISPUTED) {
+    if (orderInfoAs[orderId].status == STATUS.DISPUTED) {
       throw;
     }
-    if (now < (order.shippedAt + ordersStoreInfo[orderId].disputeSeconds)) {
+    if (now < (orderInfoAs[orderId].shippedAt + orderInfoBs[orderId].disputeSeconds)) {
       throw;
     }
     if (
-      msg.sender != address(order.store)
-      && msg.sender != address(order.arbitrator)
-      && msg.sender != order.buyer
+      msg.sender != orderInfoAs[orderId].store
+      && msg.sender != orderInfoAs[orderId].arbitrator
+      && msg.sender != orderInfoAs[orderId].buyer
     ) {
       throw;
     }
 
     //TODO: overflow checks
-    ordersPayoutInfo[orderId].storePayoutWEI = ordersCartInfo[orderId].prebufferCURR * ticker.prices(ordersStoreInfo[orderId].currency) * order.storePayoutMicroperun / MICRO;
+    orderInfoBs[orderId].storePayoutWEI = orderInfoBs[orderId].prebufferCURR * ticker.prices(orderInfoBs[orderId].currency) * orderInfoBs[orderId].storePayoutMicroperun / MICRO;
     _setStatus(orderId, STATUS.FINALIZED);
   }
 
   function withdrawAsStore(uint256 orderId) {
-    Order order = orders[orderId];
-    if (order.status != STATUS.FINALIZED) {
+    if (orderInfoAs[orderId].status != STATUS.FINALIZED) {
       throw;
     }
-    if (msg.sender != address(order.store)) {
+    if (msg.sender != orderInfoAs[orderId].store) {
       throw;
     }
-    if (ordersPayoutInfo[orderId].isStorePayedOut) {
+    if (orderInfoBs[orderId].isStorePayedOut) {
       throw;
     }
-    address storePayoutAddress = order.store.get_address('payout');
-    if (!storePayoutAddress.send(ordersPayoutInfo[orderId].storePayoutWEI)) {
+    address storePayoutAddress = kv(orderInfoAs[orderId].store).get_address('payout');
+    if (!storePayoutAddress.send(orderInfoBs[orderId].storePayoutWEI)) {
       throw;
     }
   }
 
   function withdrawAsBuyer(uint256 orderId) {
-    Order order = orders[orderId];
-    if (order.status != STATUS.FINALIZED) {
+    if (orderInfoAs[orderId].status != STATUS.FINALIZED) {
       throw;
     }
-    if (msg.sender != address(order.store)) {
+    if (msg.sender != orderInfoAs[orderId].store) {
       throw;
     }
-    if (ordersPayoutInfo[orderId].isBuyerPayedOut) {
+    if (orderInfoBs[orderId].isBuyerPayedOut) {
       throw;
     }
-    if (!order.buyer.send(order.receivedWEI - ordersPayoutInfo[orderId].storePayoutWEI)) {
+    if (!orderInfoAs[orderId].buyer.send(orderInfoAs[orderId].receivedWEI - orderInfoBs[orderId].storePayoutWEI)) {
       throw;
     }
   }
