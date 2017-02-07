@@ -125,6 +125,7 @@ const Store = new Schema([
   new Variable('uint256', 'minProductsTotal'),
   new Variable('uint256', 'affiliateFeeMicroperun'),
   new Variable('bytes32', 'metaMultihash'),
+  new Variable('address', 'payout'),
   new StructArray('products', [
     new Variable('bool', 'isArchived'),
     new Variable('uint256', 'price'),
@@ -144,7 +145,8 @@ const Arbitrator = new Schema([
   new Variable('bytes32', 'currency'),
   new Variable('uint256', 'feeBase'),
   new Variable('uint256', 'feeMicroperun'),
-  new Variable('bytes32', 'metaMultihash')
+  new Variable('bytes32', 'metaMultihash'),
+  new Variable('address', 'payout')
 //  ,
 //  new MappedArray('address', 'approvedStore')
 ])

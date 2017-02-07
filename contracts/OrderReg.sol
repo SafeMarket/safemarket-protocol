@@ -272,27 +272,27 @@ contract OrderReg is owned {
     _finalize(orderId);
   }
 
-  function withdrawAsStore(uint256 orderId) {
+  function payoutStore(uint256 orderId) {
     if (orderInfoAs[orderId].status != STATUS.FINALIZED) {
-      throw;
-    }
-    if (msg.sender != orderInfoAs[orderId].store) {
       throw;
     }
     if (orderInfoBs[orderId].isStorePayedOut) {
       throw;
     }
     address storePayoutAddress = kv(orderInfoAs[orderId].store).get_address('payout');
+    if (storePayoutAddress == address(0)) {
+      throw;
+    }
     if (!storePayoutAddress.send(orderInfoBs[orderId].storePayoutWEI)) {
       throw;
     }
   }
 
-  function withdrawAsBuyer(uint256 orderId) {
+  function payoutBuyer(uint256 orderId) {
     if (orderInfoAs[orderId].status != STATUS.FINALIZED) {
       throw;
     }
-    if (msg.sender != orderInfoAs[orderId].store) {
+    if (orderInfoAs[orderId].store != msg.sender) {
       throw;
     }
     if (orderInfoBs[orderId].isBuyerPayedOut) {
