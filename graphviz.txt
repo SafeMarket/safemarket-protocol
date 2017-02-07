@@ -1,0 +1,11 @@
+digraph Status {
+	"processing" -> "shipped" [color="red"];
+	"shipped" -> "finalized" [color="green"];
+	"shipped" -> "finalized" [style="dashed"];
+	"processing" -> "cancelled" [color="red"];
+	"processing" -> "cancelled" [color="blue"];
+	"cancelled" -> "finalized" [style="dashed"];
+	"shipped" -> "disputed" [color="blue"];
+	"disputed" -> "dispute resolved" [color="purple"];
+	"dispute resolved" -> "finalized" [style="dashed"];
+}

@@ -164,7 +164,7 @@ describe('OrderReg', () => {
         })
       })
       it('should be rejected from the wrong persona', () => {
-        return orderReg.broadcast('setStatusAsCancelled(uint256)', [orderId], { from: personas[1] }).getTransaction().should.be.rejectedWith(Error)
+        return orderReg.broadcast('setStatusToCancelled(uint256)', [orderId], { from: personas[1] }).getTransaction().should.be.rejectedWith(Error)
       })
       it('status should be STATUS.PROCESSING', () => {
         return getOrder(orderReg, orderId).then((order) => {
@@ -172,11 +172,11 @@ describe('OrderReg', () => {
         })
       })
       it('should be allowed from buyer', () => {
-        return orderReg.broadcast('setStatusAsCancelled(uint256)', [orderId], { from: personas[0] }).getTransaction()
+        return orderReg.broadcast('setStatusToCancelled(uint256)', [orderId], { from: personas[0] }).getTransaction()
       })
-      it('status should be STATUS.CANCELLED', () => {
+      it('status should be STATUS.FINALIZED', () => {
         return getOrder(orderReg, orderId).then((order) => {
-          order.status.should.amorphEqual(STATUS.CANCELLED)
+          order.status.should.amorphEqual(STATUS.FINALIZED)
         })
       })
     })

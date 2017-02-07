@@ -143,7 +143,6 @@ contract OrderReg is owned {
 
     orderInfoAs[orderId].createdAt = now;
     orderInfoAs[orderId].status = STATUS.PROCESSING;
-    orderInfoBs[orderId].storePayoutMicroperun = 1 * MICRO;
 
     orderInfoAs[orderId].buyer = msg.sender;
     orderInfoAs[orderId].store = store;
@@ -196,52 +195,63 @@ contract OrderReg is owned {
     ordersUpdates[orderId].push(Update(status, msg.sender, now));
   }
 
-  function setStatusAsCancelled(uint256 orderId) {
-    if (msg.sender == orderInfoAs[orderId].store) {
-      _setStatus(orderId, STATUS.CANCELLED);
-      return;
-    }
-    if (msg.sender == orderInfoAs[orderId].buyer) {
-      if (orderInfoAs[orderId].status != STATUS.PROCESSING) {
-        throw;
-      }
-      _setStatus(orderId, STATUS.CANCELLED);
-      return;
-    }
-    throw;
+  function _finalize(uint256 orderId) internal {
+    orderInfoBs[orderId].storePayoutWEI = orderInfoBs[orderId].prebufferCURR * ticker.prices(orderInfoBs[orderId].currency) * orderInfoBs[orderId].storePayoutMicroperun / MICRO;
+    _setStatus(orderId, STATUS.FINALIZED);
   }
 
-  function setStatusAsShipped(uint256 orderId) {
+
+  function setStatusToCancelled(uint256 orderId) {
     if (orderInfoAs[orderId].status != STATUS.PROCESSING) {
       throw;
     }
-    if (msg.sender != orderInfoAs[orderId].store) {
+    if (
+      orderInfoAs[orderId].buyer != msg.sender
+      && orderInfoAs[orderId].store != msg.sender
+    ) {
+      throw;
+    }
+    _setStatus(orderId, STATUS.CANCELLED);
+    _finalize(orderId);
+  }
+
+  function setStatusToShipped(uint256 orderId) {
+    if (orderInfoAs[orderId].status != STATUS.PROCESSING) {
+      throw;
+    }
+    if (orderInfoAs[orderId].store != msg.sender) {
       throw;
     }
     _setStatus(orderId, STATUS.SHIPPED);
     orderInfoAs[orderId].shippedAt = now;
+    orderInfoBs[orderId].storePayoutMicroperun = 1 * MICRO;
+    if (orderInfoAs[orderId].arbitrator == address(0)) {
+      _finalize(orderId);
+    }
   }
 
-  function setStatusAsDisputed(uint256 orderId) {
+  function setStatusToDisputed(uint256 orderId) {
     if (orderInfoAs[orderId].status != STATUS.SHIPPED) {
       throw;
     }
-    if (msg.sender != orderInfoAs[orderId].buyer) {
+    if (orderInfoAs[orderId].buyer != msg.sender) {
+      throw;
+    }
+    if (orderInfoAs[orderId].arbitrator == address(0)) {
       throw;
     }
     // TODO: overflow protection
     if (now > (orderInfoAs[orderId].shippedAt + orderInfoBs[orderId].disputeSeconds)) {
-      // in case of no arbitrator, disputeSeconds will be 0
       throw;
     }
     _setStatus(orderId, STATUS.DISPUTED);
   }
 
-  function setStatusAsDisputeResolved(uint256 orderId, uint256 storePayoutMicroperun) {
+  function setStatusToDisputeResolved(uint256 orderId, uint256 storePayoutMicroperun) {
     if (orderInfoAs[orderId].status != STATUS.DISPUTED) {
       throw;
     }
-    if (msg.sender != orderInfoAs[orderId].arbitrator) {
+    if (orderInfoAs[orderId].arbitrator != msg.sender) {
       throw;
     }
     if (storePayoutMicroperun > (1 * MICRO)) {
@@ -252,27 +262,14 @@ contract OrderReg is owned {
 
   }
 
-  function setStatusAsFinalized(uint256 orderId) {
-    if (orderInfoAs[orderId].status == STATUS.PROCESSING) {
-      throw;
-    }
-    if (orderInfoAs[orderId].status == STATUS.DISPUTED) {
+  function setStatusToFinalized(uint256 orderId) {
+    if (orderInfoAs[orderId].status != STATUS.SHIPPED) {
       throw;
     }
     if (now < (orderInfoAs[orderId].shippedAt + orderInfoBs[orderId].disputeSeconds)) {
       throw;
     }
-    if (
-      msg.sender != orderInfoAs[orderId].store
-      && msg.sender != orderInfoAs[orderId].arbitrator
-      && msg.sender != orderInfoAs[orderId].buyer
-    ) {
-      throw;
-    }
-
-    //TODO: overflow checks
-    orderInfoBs[orderId].storePayoutWEI = orderInfoBs[orderId].prebufferCURR * ticker.prices(orderInfoBs[orderId].currency) * orderInfoBs[orderId].storePayoutMicroperun / MICRO;
-    _setStatus(orderId, STATUS.FINALIZED);
+    _finalize(orderId);
   }
 
   function withdrawAsStore(uint256 orderId) {
