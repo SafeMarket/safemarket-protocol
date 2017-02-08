@@ -279,7 +279,7 @@ contract OrderReg is owned {
     if (orderInfoBs[orderId].isStorePayedOut) {
       throw;
     }
-    address storePayoutAddress = kv(orderInfoAs[orderId].store).get_address('payout');
+    address storePayoutAddress = kv(orderInfoAs[orderId].store).get_address('coinbase');
     if (storePayoutAddress == address(0)) {
       throw;
     }
