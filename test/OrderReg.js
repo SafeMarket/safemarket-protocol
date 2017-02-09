@@ -99,6 +99,7 @@ describe('OrderReg', () => {
       order.bufferMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(0.5)
       order.affiliateFeeMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(0.03)
       order.transportPrice.to('number').should.equal(50)
+      order.disputeSeconds.to('number').should.equal(60)
 
       order.receivedWEI.to('number').should.equal(1500)
 

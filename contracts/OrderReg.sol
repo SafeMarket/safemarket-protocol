@@ -152,6 +152,7 @@ contract OrderReg is owned {
     orderInfoAs[orderId].productsCount = productIds.length;
 
     orderInfoBs[orderId].currency = kv(store).get_bytes32('currency');
+    orderInfoBs[orderId].disputeSeconds = kv(store).get_uint256('disputeSeconds');
     orderInfoBs[orderId].bufferMicroperun = kv(store).get_uint256('bufferMicroperun');
     orderInfoBs[orderId].affiliateFeeMicroperun = kv(store).get_uint256('affiliateFeeMicroperun');
     orderInfoBs[orderId].transportId = transportId;
