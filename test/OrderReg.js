@@ -186,10 +186,10 @@ describe('OrderReg', () => {
 function createOrder(orderReg, store) {
   return getOrdersCount(orderReg).then((ordersCountBefore) => {
     return orderReg.broadcast(
-      'create(address,address,address,uint256[],uint256[],uint256)',
+      'create(address,uint256,address,uint256[],uint256[],uint256)',
       [
         store.address,
-        new Amorph(0, 'number'),
+        new Amorph('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 'hex'),
         new Amorph(0, 'number'),
         [new Amorph(0, 'number'), new Amorph(2, 'number')],
         [new Amorph(2, 'number'), new Amorph(1, 'number')],

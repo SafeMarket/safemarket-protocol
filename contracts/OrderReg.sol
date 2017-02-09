@@ -111,7 +111,7 @@ contract OrderReg is owned {
 
   function create(
     address store,
-    address arbitrator,
+    uint256 arbitratorId,
     address affiliate,
     uint256[] productIds,
     uint256[] productQuantities,
@@ -127,9 +127,11 @@ contract OrderReg is owned {
     ordersByStore[store].push(orderId);
     ordersByStoreCount[store] += 1;
 
-    if (arbitrator != address(0)) {
-      ordersByArbitrator[arbitrator].push(orderId);
-      ordersByArbitratorCount[arbitrator] += 1;
+
+    if (arbitratorId != uint256(-1)) {
+      orderInfoAs[orderId].arbitrator = kv(store).get_address(sha3('approvedArbitrators', arbitratorId));
+      ordersByArbitrator[orderInfoAs[orderId].arbitrator].push(orderId);
+      ordersByArbitratorCount[orderInfoAs[orderId].arbitrator] += 1;
     }
 
     if (affiliate != address(0)) {
@@ -146,7 +148,6 @@ contract OrderReg is owned {
 
     orderInfoAs[orderId].buyer = msg.sender;
     orderInfoAs[orderId].store = store;
-    orderInfoAs[orderId].arbitrator = arbitrator;
     orderInfoAs[orderId].affiliate = affiliate;
     orderInfoAs[orderId].productsCount = productIds.length;
 
