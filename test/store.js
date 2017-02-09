@@ -87,7 +87,8 @@ describe('store', () => {
             isArchived: new Amorph(false, 'boolean'),
             price: new Amorph(50, 'number')
           }
-        ]
+        ],
+        approvedArbitrators: [new Amorph(1, 'number'), new Amorph(2, 'number')]
       }, (method, args) => {
         return store.broadcast(method, args).getTransactionReceipt()
       })
@@ -103,7 +104,7 @@ describe('store', () => {
       schemas.Store.state.bufferMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(.5)
       schemas.Store.state.disputeSeconds.to('number').should.equal(60)
       schemas.Store.state.minProductsTotal.to('number').should.equal(50)
-      schemas.Store.state.affiliateFeeMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(.03),
+      schemas.Store.state.affiliateFeeMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(.03)
       schemas.Store.state.metaMultihash.to('hex').indexOf('deadbeef').should.equal(0)
       schemas.Store.state.products.should.have.length(3)
       schemas.Store.state.transports.should.have.length(2)
@@ -120,6 +121,9 @@ describe('store', () => {
       schemas.Store.state.transports[0].price.to('number').should.equal(40)
       schemas.Store.state.transports[1].isArchived.to('boolean').should.equal(false)
       schemas.Store.state.transports[1].price.to('number').should.equal(50)
+      schemas.Store.state.approvedArbitrators.should.have.length(2)
+      schemas.Store.state.approvedArbitrators[0].should.amorphTo('number').equal(1)
+      schemas.Store.state.approvedArbitrators[1].should.amorphTo('number').equal(2)
     })
 
   })

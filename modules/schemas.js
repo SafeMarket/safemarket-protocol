@@ -111,10 +111,49 @@ Variable.prototype.upload = function upload(state, func) {
   ])
 }
 
-function MappedArray(type, name) {
+function VariableArray(type, name) {
   this.type = type
   this.name = name
+  this.state = []
+  this.countMethod =
+  this.countKey = new Amorph(`${this.name}_count`, 'ascii')
 }
+
+VariableArray.prototype.getValueKey = function getValueKey(index) {
+  return new Amorph(soliditySha3.default(this.name, index), 'hex.prefixed')
+}
+
+VariableArray.prototype.upload = function upload(state, func) {
+  if (state.length !== this.state.length) {
+    func('set_uint256(bytes32,uint256)', [
+      this.countKey,
+      new Amorph(state.length, 'number')
+    ])
+  }
+  state.forEach((value, index) => {
+    if (index >= this.state.length || !this.state[index].equals(value)) {
+      func(`set_${this.type}(bytes32,${this.type})`, [
+        this.getValueKey(index), value
+      ])
+    }
+  })
+}
+
+VariableArray.prototype.download = function download(func) {
+  const values = []
+  return func('get_uint256(bytes32)', [this.countKey]).then((count) => {
+    const fetches = _.range(count.to('number')).map((index) => {
+      values.push(null)
+      return func(`get_${this.type}(bytes32)`, [this.getValueKey(index)]).then((value) => {
+        values[index] = value
+      })
+    })
+    return Q.all(fetches).then(() => {
+      this.state = values
+    })
+  })
+}
+
 
 const Store = new Schema([
   new Variable('address', 'orderReg'),
@@ -134,9 +173,8 @@ const Store = new Schema([
   new StructArray('transports', [
     new Variable('bool', 'isArchived'),
     new Variable('uint256', 'price')
-  ])
-//  ,
-//  new MappedArray('address', 'approvedArbitrator')
+  ]),
+  new VariableArray('address', 'approvedArbitrators')
 ])
 
 const Arbitrator = new Schema([
@@ -146,9 +184,8 @@ const Arbitrator = new Schema([
   new Variable('uint256', 'feeBase'),
   new Variable('uint256', 'feeMicroperun'),
   new Variable('bytes32', 'metaMultihash'),
-  new Variable('address', 'coinbase')
-//  ,
-//  new MappedArray('address', 'approvedStore')
+  new Variable('address', 'coinbase'),
+  new VariableArray('address', 'approvedStores')
 ])
 
 module.exports = {
