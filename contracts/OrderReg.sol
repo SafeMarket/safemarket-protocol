@@ -6,6 +6,14 @@ import "Ticker.sol";
 
 contract OrderReg is owned {
 
+  event Creation(
+    uint256 id,
+    address indexed buyer,
+    address indexed store,
+    address indexed arbitrator,
+    address affiliate
+  );
+
   enum STATUS {
     PROCESSING,
     CANCELLED,
@@ -188,6 +196,8 @@ contract OrderReg is owned {
     if(orderInfoAs[orderId].receivedWEI < (prebufferWEI + bufferWEI)) {
       throw;
     }
+
+    Creation(orderId, msg.sender, store, orderInfoAs[orderId].arbitrator, affiliate);
   }
 
 
