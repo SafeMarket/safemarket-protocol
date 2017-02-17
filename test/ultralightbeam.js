@@ -19,10 +19,10 @@ const ultralightbeam = new Ultralightbeam(provider, {
     }
     return ultralightbeam.eth.getTransactionCount(personas[0].address).then((nonce) => {
       transactionRequest.set('nonce', nonce)
+      if (transactionRequest.values.gas) {
+        return transactionRequest
+      }
       return ultralightbeam.eth.estimateGas(transactionRequest).then((gas) => {
-        console.log('=============')
-        console.log('gas', gas.to('number'))
-        console.log('=============')
         if (gas.to('bignumber').gt(gasLimit)) {
           return Q.reject(new Error('Exceeds block limit'))
         }

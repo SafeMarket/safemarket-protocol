@@ -7,6 +7,8 @@ const SolWrapper = require('ultralightbeam/lib/SolWrapper')
 const personas = require('./personas')
 const Amorph = require('../modules/Amorph')
 
+require('./safecomm')
+
 const deferred = Q.defer()
 
 module.exports = deferred.promise

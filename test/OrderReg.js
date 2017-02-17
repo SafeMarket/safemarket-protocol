@@ -198,7 +198,8 @@ function createOrder(orderReg, store) {
       ], {
         value: new Amorph(1500, 'number') // ((10USD*2)+(20USD*1)+(50USD))*1.5
       }
-    ).getTransaction().then(() => {
+    ).getTransactionReceipt().then((transactionReceipt) => {
+      const parsed = parseOrderCreationTransactionReceipt(transactionReceipt)
       return getOrdersCount(orderReg).then((ordersCountAfter) => {
         if (ordersCountAfter.to('number') - ordersCountBefore.to('number') !== 1) {
           throw new Error('Order failed to create')
@@ -207,6 +208,9 @@ function createOrder(orderReg, store) {
       })
     })
   })
+}
+
+function parseOrderCreationTransactionReceipt(transactionReceipt) {
 }
 
 function getOrdersCount(orderReg) {
