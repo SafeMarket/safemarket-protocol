@@ -33,6 +33,7 @@
     "grunt-contrib-watch": "^1.0.0",
     "grunt-mocha-test": "^0.13.2",
     "grunt-solc": "^2.0.0",
+    "ipfs-amorph-api": "0.0.3",
     "mocha": "^3.2.0",
     "safecomm-utils": "0.0.2",
     "solc": "^0.4.8",
