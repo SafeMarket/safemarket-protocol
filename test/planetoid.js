@@ -7,20 +7,36 @@ const ipfsAmorphApi = require('./ipfsAmorphApi')
 const _ = require('lodash')
 const Amorph = require('../modules/Amorph')
 const personas = require('./personas')
+const crypto = require('crypto')
+const planetoidUtils = require('planetoid-utils')
+const ipfsUtils = require('ipfs-amorph-utils')
 
 const deferred = Q.defer()
 module.exports = deferred.promise
 
-const documents = _.range(10).map(() => {
-  return new Amorph(`document #${10}`, 'ascii')
-})
+function random(length) {
+  return new Amorph(crypto.randomBytes(length), 'buffer')
+}
 
 describe('planetoid', () => {
 
   let planetoid
+
+  const tags = _.range(10).map(() => {
+    return random(4)
+  })
+  const values = _.range(10).map(() => {
+    return random(2).as('array', (array) => {
+      return [0, 0, 0, 0, 0, 0].concat(array)
+    })
+  })
+  const documentHashes = _.range(10).map(() => {
+    return random(32)
+  })
+
+  const transactionReceipts = []
   const records = []
   const recordHashes = []
-  const documentHashes = []
   const logs = []
   const timestamps = []
 
@@ -49,28 +65,16 @@ describe('planetoid', () => {
     return planetoid.fetch('recordsCount()').should.eventually.amorphTo('number').equal(0)
   })
 
-  it('should add documents to IPFS', () => {
-    return Q.all(documents.map((document) => {
-      return ipfsAmorphApi.addFile(document)
-    })).then((documentMultihashes) => {
-      return documentMultihashes.map((documentMultihash) => {
-        return documentMultihash.as('array', (array) => {
-          return array.slice(2)
-        })
-      })
-    }).then((_documentHashes) => {
-      documentHashes.push(..._documentHashes)
-    })
-  })
-
   it('should add documents to planetoid', () => {
-    return Q.all(documentHashes.map((documentHash) => {
-      return planetoid.broadcast('addDocument(bytes32)', [documentHash]).getTransactionReceipt()
-    })).then((transactionReceipts) => {
+    return Q.all(_.range(10).map((index) => {
+      const tag = tags[index]
+      const value = values[index]
+      const documentHash = documentHashes[index]
+      return planetoid.broadcast('addDocument(bytes4,bytes32)', [tag, documentHash], { value }).getTransactionReceipt()
+    })).then((_transactionReceipts) => {
+      transactionReceipts.push(..._transactionReceipts)
       return transactionReceipts.map((transactionReceipt) => {
-        const log = planetoid.parseTransactionReceipt(transactionReceipt)[0].topics
-        log.transactionReceipt = transactionReceipt
-        return log
+        return planetoid.parseTransactionReceipt(transactionReceipt)[0].topics
       })
     }).then((_logs) => {
       logs.push(..._logs)
@@ -83,14 +87,17 @@ describe('planetoid', () => {
 
   it('should have correct logs', () => {
     logs.forEach((log, index) => {
+      log.should.have.keys(['sender', 'tag', 'value', 'documentHash'])
       log.sender.should.amorphEqual(personas[0].address)
+      log.tag.should.amorphEqual(tags[index])
+      log.value.should.amorphEqual(values[index])
       log.documentHash.should.amorphEqual(documentHashes[index])
     })
   })
 
   it('should get timestmaps', () => {
-    return Q.all(logs.map((log) => {
-      return ultralightbeam.eth.getBlockByHash(log.transactionReceipt.blockHash, false)
+    return Q.all(transactionReceipts.map((transactionReceipt) => {
+      return ultralightbeam.eth.getBlockByHash(transactionReceipt.blockHash, false)
     })).then((blocks) => {
       return blocks.map((block) => {
         return block.timestamp
@@ -102,44 +109,31 @@ describe('planetoid', () => {
 
   it('should add records to IPFS', () => {
 
-    function addRecord(index, _recordHash) {
-      const log = logs[index]
-      const timestamp = timestamps[index]
-      const record = timestamp.as('array', (timestampArray) => {
-        return timestampArray.concat(
-          log.sender.to('array')
-        ).concat(
-          log.documentHash.to('array')
-        ).concat(
-          _recordHash.to('array')
-        )
-      })
-      records.push(record)
-      return ipfsAmorphApi.addFile(record).then((recordMultihash) => {
-        const recordHash = recordMultihash.as('array', (array) => {
-          return array.slice(2)
-        })
-        recordHashes.push(recordHash)
-        const nextIndex = index + 1
-        if (nextIndex < documents.length) {
-          return addRecord(nextIndex, recordHash)
-        }
-      })
-    }
-
-    const zeroRecordHash = new Amorph(Array(32).fill(0), 'array')
-    return addRecord(0, zeroRecordHash)
-  })
-
-  it('records should all be 88 bytes long', () => {
-    records.forEach((record) => {
-      record.to('array').should.have.length(88)
+    let previousRecordHash = new Amorph(Array(32).fill(0), 'array')
+    const _records = _.range(10).map((index) => {
+      const record = planetoidUtils.marshalRecord(
+        timestamps[index],
+        personas[0].address,
+        personas[0].address,
+        tags[index],
+        values[index],
+        documentHashes[index],
+        previousRecordHash
+      )
+      previousRecordHash = ipfsUtils.stripSha2256Multihash(ipfsUtils.getUnixFileMultihash(record))
+      recordHashes.push(previousRecordHash)
+      return record
     })
+    records.push(..._records)
+
+    return Q.all(_records.map((record) => {
+      return ipfsAmorphApi.addFile(record)
+    }))
   })
 
-  it('record hashes should be correct', () => {
-    recordHashes.forEach((recordHash, index) => {
-      recordHash.should.amorphEqual(logs[index].recordHash)
+  it('records should all be 120 bytes long', () => {
+    records.forEach((record) => {
+      record.to('array').should.have.length(120)
     })
   })
 
@@ -153,36 +147,23 @@ describe('planetoid', () => {
 
   it('should be able to crawl records down the chain', () => {
     return Q.all(recordHashes.map((recordHash) => {
-      const recordMultihash = recordHash.as('array', (array) => {
-        return [0x12, 32].concat(array)
-      })
-      return ipfsAmorphApi.getFile(recordMultihash)
+      return ipfsAmorphApi.getFile(ipfsUtils.unstripSha2256Hash(recordHash))
     })).then((_records) => {
       _records.forEach((record, index) => {
 
         record.should.amorphEqual(records[index])
+        const unmarshalledRecord = planetoidUtils.unmarshalRecord(record)
 
-        const timestamp = record.as('array', (array) => {
-          return array.slice(0, 4)
-        })
-        const sender = record.as('array', (array) => {
-          return array.slice(4, 24)
-        })
-        const documentHash = record.as('array', (array) => {
-          return array.slice(24, 56)
-        })
-        const prevRecordHash = record.as('array', (array) => {
-          return array.slice(56, 88)
-        })
-
-        timestamp.should.amorphEqual(timestamps[index])
-        sender.should.amorphEqual(personas[0].address)
-        documentHash.should.amorphEqual(documentHashes[index])
-
+        unmarshalledRecord.timestamp.should.amorphEqual(timestamps[index])
+        unmarshalledRecord.origin.should.amorphEqual(personas[0].address)
+        unmarshalledRecord.sender.should.amorphEqual(personas[0].address)
+        unmarshalledRecord.tag.should.amorphEqual(tags[index])
+        unmarshalledRecord.value.should.amorphEqual(values[index])
+        unmarshalledRecord.documentHash.should.amorphEqual(documentHashes[index])
         if (index > 0) {
-          prevRecordHash.should.amorphEqual(recordHashes[index - 1])
+          unmarshalledRecord.previousRecordHash.should.amorphEqual(recordHashes[index - 1])
         } else {
-          prevRecordHash.to('number').should.equal(0)
+          unmarshalledRecord.previousRecordHash.to('number').should.equal(0)
         }
       })
     })

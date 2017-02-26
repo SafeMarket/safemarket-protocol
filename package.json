@@ -34,11 +34,13 @@
     "grunt-mocha-test": "^0.13.2",
     "grunt-solc": "^2.0.0",
     "ipfs-amorph-api": "0.0.3",
+    "ipfs-amorph-utils": "0.0.1",
     "mocha": "^3.2.0",
+    "planetoid-utils": "0.0.2",
     "safecomm-utils": "0.0.2",
     "solc": "^0.4.8",
     "solidity-sha3": "^0.4.1",
-    "ultralightbeam": "^0.15.6"
+    "ultralightbeam": "^0.15.7"
   },
   "dependencies": {
     "amorph-parse-solc-output": "^0.1.0",
