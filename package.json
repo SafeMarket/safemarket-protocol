@@ -2,7 +2,7 @@
   "name": "safemarket-protocol",
   "version": "1.1.15",
   "description": "",
-  "main": "Gruntfile.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha --require modules/chai --bail --timeout 10000"
   },
@@ -14,6 +14,7 @@
     "amorph-buffer": "^1.1.1",
     "babel-eslint": "^7.1.1",
     "bignumber": "^1.1.0",
+    "bitcore-lib": "^0.13.19",
     "chai": "^3.5.0",
     "chai-amorph": "0.0.2",
     "chai-as-promised": "^6.0.0",
@@ -26,6 +27,7 @@
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^3.0.2",
     "eslint-plugin-react": "^6.9.0",
+    "ethereum-account-amorph": "0.0.2",
     "ethereumjs-testrpc": "^3.0.3",
     "glob-fs": "^0.1.6",
     "grunt": "^1.0.1",
@@ -34,16 +36,24 @@
     "grunt-mocha-test": "^0.13.2",
     "grunt-solc": "^2.0.0",
     "ipfs-amorph-api": "0.0.3",
-    "ipfs-amorph-utils": "0.0.1",
+    "ipfs-amorph-utils": "0.0.2",
     "mocha": "^3.2.0",
-    "planetoid-utils": "0.0.2",
-    "safecomm-utils": "0.0.2",
-    "solc": "^0.4.8",
+    "planetoid-utils": "0.0.4",
+    "random-amorph": "0.0.1",
+    "safecomm-utils": "^0.1.0",
+    "secp256k1-amorph-utils": "0.0.2",
+    "solc": "0.4.8",
     "solidity-sha3": "^0.4.1",
-    "ultralightbeam": "^0.15.7"
+    "ultralightbeam": "^0.16.4"
   },
   "dependencies": {
+    "aes-128-cbc-amorph": "0.0.1",
     "amorph-parse-solc-output": "^0.1.0",
-    "solc": "^0.4.8"
+    "cross-converter": "0.0.6",
+    "elliptic": "^6.4.0",
+    "protobufjs": "^6.6.3",
+    "protomorph": "0.0.1",
+    "safecomm-utils": "^0.1.0",
+    "testable-error": "^0.1.1"
   }
 }

@@ -1,10 +1,11 @@
 const Amorph = require('ultralightbeam/lib/Amorph')
 
-Amorph.loadConverter('web3.bytes', 'ascii', (hexPrefixed) => {
-  const array = Amorph.crossConverter.convert(hexPrefixed, 'hex.prefixed', 'array').filter((byte) => {
-    return byte > 0
-  })
-  return Amorph.crossConverter.convert(array, 'array', 'ascii')
+Amorph.loadConverter('boolean', 'buffer', (boolean) => {
+  return !boolean ? new Buffer([0x00]) : new Buffer([0x01])
+})
+
+Amorph.loadConverter('buffer', 'boolean', (buffer) => {
+  return buffer[0] === 0x01
 })
 
 Amorph.ready()

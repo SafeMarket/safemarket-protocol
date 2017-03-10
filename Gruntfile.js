@@ -14,7 +14,7 @@ module.exports = function gruntfile(grunt) {
         tasks: ['build', 'mochaTest']
       },
       tests: {
-        files: ['test/*'],
+        files: ['index.js', 'test/*'],
         tasks: ['mochaTest']
       }
     },

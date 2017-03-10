@@ -17,7 +17,8 @@
         "no-underscore-dangle": "off",
         "no-unused-vars": "warn",
         "no-use-before-define": "off",
-        "no-debugger": "warn"
+        "no-debugger": "warn",
+        "no-multi-assign": "warn"
     },
     "globals": {
         "window": true,

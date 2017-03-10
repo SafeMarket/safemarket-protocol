@@ -1,13 +1,15 @@
 const TestRPC = require('ethereumjs-testrpc')
-const personas = require('./personas')
+const accounts = require('./accounts')
+const _ = require('lodash')
+const defaultBalance = require('./defaultBalance')
 
 module.exports = TestRPC.provider({
   gasLimit: 4000000,
-  blocktime: 2,
-  accounts: personas.map((persona) => {
+  blocktime: 1,
+  accounts: _.map(accounts, (account) => {
     return {
-      balance: 100000000000000000000000000,
-      secretKey: persona.privateKey.to('hex.prefixed')
+      balance: defaultBalance.to('number'),
+      secretKey: account.privateKey.to('hex.prefixed')
     }
   }),
   locked: false

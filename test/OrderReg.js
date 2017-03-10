@@ -1,16 +1,17 @@
 const contracts = require('../modules/contracts')
 const Q = require('q')
-const parseTransactionReceipt = require('../modules/parseTransactionReceipt')
 const ultralightbeam = require('./ultralightbeam')
 const SolDeployTranasctionRequest = require('ultralightbeam/lib/SolDeployTransactionRequest')
 const SolWrapper = require('ultralightbeam/lib/SolWrapper')
-const personas = require('./personas')
+const accounts = require('./accounts')
 const Amorph = require('../modules/Amorph')
-const storePromise = require('./store')
-const schemas = require('../modules/schemas')
-const MICRO = require('../modules/MICRO')
-const tickerPromise = require('./ticker')
-const _ = require('lodash')
+const random = require('./random')
+const keccak256 = require('keccak256-amorph')
+const filestorePromise = require('./filestore')
+const Account = require('ethereum-account-amorph')
+const defaultBalance = require('./defaultBalance')
+const utils = require('../')
+const priceParams = require('./priceParams')
 
 const deferred = Q.defer()
 
@@ -18,24 +19,29 @@ module.exports = deferred.promise
 
 describe('OrderReg', () => {
 
+  const zero = new Amorph(0, 'number')
+  const orderId = random(32)
+  const currency = new Amorph('USD6', 'ascii')
+  const prebufferCURR = random(32)
+  const encapsulatedOrderMeta = random(128)
+  const affiliate = random(20)
+  const payoutAddress = random(20)
+
   let orderReg
-  let store
-  let ticker
-  let STATUS
+  let filestore
+  let storePrefund = new Amorph('10000000000000000', 'number.string')
+  const affiliateFeeMicroperun = new Amorph('50000', 'number.string')
+  const value = storePrefund.as('bignumber', (bignumber) => {
+    return bignumber.times(2)
+  })
 
   after(() => {
     deferred.resolve(orderReg)
   })
 
   before(() => {
-    return storePromise.then((_store) => {
-      store = _store
-    })
-  })
-
-  before(() => {
-    return tickerPromise.then((_ticker) => {
-      ticker = _ticker
+    return filestorePromise.then((_filestore) => {
+      filestore = _filestore
     })
   })
 
@@ -52,197 +58,92 @@ describe('OrderReg', () => {
       })
   })
 
-  it('should get STATUS ids', () => {
-    return orderReg.fetch('STATUS_IDS()', []).then((_STATUS) => {
-      STATUS = _STATUS
+  it('should set storePrefund', () => {
+    return orderReg.broadcast('setStorePrefund(uint256)', [storePrefund]).getConfirmation()
+  })
+
+  it('should get storePrefund', () => {
+    return orderReg.fetch('storePrefund()', []).should.eventually.amorphEqual(storePrefund)
+  })
+
+  it('should set affiliateFeeMicroperun', () => {
+    return orderReg.broadcast('setAffiliateFeeMicroperun(uint256)', [affiliateFeeMicroperun]).getConfirmation()
+  })
+
+  it('should get affiliateFeeMicroperun', () => {
+    return orderReg.fetch('affiliateFeeMicroperun()', []).should.eventually.amorphEqual(affiliateFeeMicroperun)
+  })
+
+  it('should set prices', () => {
+    return Q.all(priceParams.map((param) => {
+      return orderReg.broadcast('setPrice(bytes4,uint256)', [
+        param.currency,
+        param.price
+      ]).getConfirmation()
+    }))
+  })
+
+  it('should get prices', () => {
+    return Q.all(priceParams.map((param) => {
+      return orderReg.fetch('prices(bytes4)', [param.currency]).should.eventually.amorphEqual(param.price)
+    }))
+  })
+
+  it('orderReg should set filestore', () => {
+    return orderReg.broadcast('setFilestore(address)', [filestore.address]).getTransactionReceipt()
+  })
+
+  it('filestore should be correct', () => {
+    return orderReg.fetch('filestore()').should.eventually.amorphEqual(filestore.address)
+  })
+
+  it('create order', () => {
+    return orderReg.broadcast(
+      'create(bytes32,bytes32,address,address,bytes4,uint256,bytes)', [
+        orderId,
+        utils.stripCompressedPublicKey(accounts.default.compressedPublicKey),
+        accounts.tempStore.address,
+        affiliate,
+        currency,
+        prebufferCURR,
+        encapsulatedOrderMeta
+      ], { value: value.as('bignumber', (bignumber) => {
+        return bignumber.plus(storePrefund.to('bignumber'))
+      }) }
+    ).getConfirmation()
+  })
+
+  it('order should have correct values', () => {
+    return orderReg.fetch('orders(bytes32)', [orderId]).then((order) => {
+      order.createdAt.should.amorphEqual(ultralightbeam.blockPoller.block.timestamp)
+      order.shippedAt.should.amorphEqual(zero)
+      order.status.should.amorphEqual(zero)
+      order.buyer.should.amorphEqual(accounts.default.address)
+      order.store.should.amorphEqual(accounts.tempStore.address)
+      order.affiliate.should.amorphEqual(affiliate)
+      // order.currency.should.amorphEqual(currency)
+      order.prebufferCURR.should.amorphEqual(prebufferCURR)
+      order.value.should.amorphEqual(value)
+      order.encapsulatedMetaHash.should.amorphEqual(keccak256(encapsulatedOrderMeta))
     })
   })
 
-  it('orderReg should set ticker', () => {
-    return orderReg.broadcast('setTicker(address)', [ticker.address]).getTransactionReceipt()
-  })
-
-  it('store should add orderReg as owner', () => {
-    return store.broadcast('setOwner(address,bool)', [orderReg.address, new Amorph(true, 'boolean')]).getTransactionReceipt()
-  })
-
-  it('should have 0 orders', () => {
-    return getOrdersCount(orderReg).should.eventually.amorphTo('number').equal(0)
-  })
-
-  it('create an order for the store', () => {
-    return createOrder(orderReg, store)
-  })
-
-  it('should have 1 orders', () => {
-    return getOrdersCount(orderReg).should.eventually.amorphTo('number').equal(1)
-  })
-
-  describe('order', () => {
-    let order
-    it('should get 1st order', () => {
-      return getOrder(orderReg, new Amorph(0, 'number')).then((_order) => {
-        order = _order
-      })
-    })
-    it('should have correct values', () => {
-      order.status.should.amorphEqual(STATUS.PROCESSING)
-      order.buyer.should.amorphEqual(personas[0].address, 'array')
-      order.store.should.amorphEqual(store.address)
-      order.arbitrator.to('number').should.equal(0)
-      order.affiliate.to('number').should.equal(0)
-      order.transportId.to('number').should.equal(1)
-
-      order.productsCount.to('number').should.equal(2)
-
-      order.currency.to('ascii').should.equal('USD')
-      order.bufferMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(0.5)
-      order.affiliateFeeMicroperun.to('bignumber').times(MICRO).toNumber().should.equal(0.03)
-      order.transportPrice.to('number').should.equal(50)
-      order.disputeSeconds.to('number').should.equal(60)
-
-      order.receivedWEI.to('number').should.equal(1500)
-
-      order.products[0].id.should.amorphTo('number').equal(0)
-      order.products[0].price.should.amorphTo('number').equal(10)
-      order.products[0].quantity.should.amorphTo('number').equal(2)
-
-      order.products[1].id.should.amorphTo('number').equal(2)
-      order.products[1].price.should.amorphTo('number').equal(30)
-      order.products[1].quantity.should.amorphTo('number').equal(1)
+  it('store should be prefunded', () => {
+    return ultralightbeam.eth.getBalance(accounts.tempStore.address).then((balance) => {
+      balance.to('bignumber').minus(defaultBalance.to('bignumber')).toNumber().should.equal(storePrefund.to('number'))
     })
   })
 
-  describe('trackers', () => {
-
-    it('ordersByBuyer should have count of 1', () => {
-      return orderReg.fetch('ordersByBuyerCount(address)', [personas[0].address]).should.eventually.amorphTo('number').equal(1)
-    })
-    it('ordersByBuyer[0] should equal 0', () => {
-      return orderReg.fetch('ordersByBuyer(address,uint256)', [
-        personas[0].address, new Amorph(0, 'number')
-      ]).should.eventually.amorphTo('number').equal(0)
-    })
-
-    it('ordersByStore should have count of 1', () => {
-      return orderReg.fetch('ordersByStoreCount(address)', [store.address]).should.eventually.amorphTo('number').equal(1)
-    })
-    it('ordersByStore[0] should equal 0', () => {
-      return orderReg.fetch('ordersByStore(address,uint256)', [
-        store.address, new Amorph(0, 'number')
-      ]).should.eventually.amorphTo('number').equal(0)
-    })
-
-    it('should create another order', () => {
-      return createOrder(orderReg, store)
-    })
-
-    it('ordersByBuyer should have count of 2', () => {
-      return orderReg.fetch('ordersByBuyerCount(address)', [personas[0].address]).should.eventually.amorphTo('number').equal(2)
-    })
-    it('ordersByBuyer[1] should equal 1', () => {
-      return orderReg.fetch('ordersByBuyer(address,uint256)', [
-        personas[0].address, new Amorph(1, 'number')
-      ]).should.eventually.amorphTo('number').equal(1)
-    })
-
-    it('ordersByStore should have count of 2', () => {
-      return orderReg.fetch('ordersByStoreCount(address)', [store.address]).should.eventually.amorphTo('number').equal(2)
-    })
-    it('ordersByStore ordersByStore[1] should equal 1', () => {
-      return orderReg.fetch('ordersByStore(address,uint256)', [
-        store.address, new Amorph(1, 'number')
-      ]).should.eventually.amorphTo('number').equal(1)
-    })
+  it('should be able to mark as shipped', () => {
+    return orderReg.broadcast('markAsShipped(bytes32,address)', [orderId, payoutAddress], {
+      from: accounts.tempStore
+    }).getConfirmation()
   })
 
-  describe('cancellation', () => {
-    describe('as buyer', () => {
-      let orderId
-      it('should create an order', () => {
-        return createOrder(orderReg, store).then((_orderId) => {
-          orderId = _orderId
-        })
-      })
-      it('should be rejected from the wrong persona', () => {
-        return orderReg.broadcast('setStatusToCancelled(uint256)', [orderId], { from: personas[1] }).getTransaction().should.be.rejectedWith(Error)
-      })
-      it('status should be STATUS.PROCESSING', () => {
-        return getOrder(orderReg, orderId).then((order) => {
-          order.status.should.amorphEqual(STATUS.PROCESSING)
-        })
-      })
-      it('should be allowed from buyer', () => {
-        return orderReg.broadcast('setStatusToCancelled(uint256)', [orderId], { from: personas[0] }).getTransaction()
-      })
-      it('status should be STATUS.FINALIZED', () => {
-        return getOrder(orderReg, orderId).then((order) => {
-          order.status.should.amorphEqual(STATUS.FINALIZED)
-        })
-      })
+  it('order should have correct values', () => {
+    return orderReg.fetch('orders(bytes32)', [orderId]).then((order) => {
+      order.shippedAt.should.amorphEqual(ultralightbeam.blockPoller.block.timestamp)
+      order.status.to('number').should.equal(2)
     })
   })
 })
-
-function createOrder(orderReg, store) {
-  return getOrdersCount(orderReg).then((ordersCountBefore) => {
-    return orderReg.broadcast(
-      'create(address,uint256,address,uint256[],uint256[],uint256)',
-      [
-        store.address,
-        new Amorph('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', 'hex'),
-        new Amorph(0, 'number'),
-        [new Amorph(0, 'number'), new Amorph(2, 'number')],
-        [new Amorph(2, 'number'), new Amorph(1, 'number')],
-        new Amorph(1, 'number')
-      ], {
-        value: new Amorph(1500, 'number') // ((10USD*2)+(20USD*1)+(50USD))*1.5
-      }
-    ).getTransactionReceipt().then((transactionReceipt) => {
-      const parsed = parseOrderCreationTransactionReceipt(transactionReceipt)
-      return getOrdersCount(orderReg).then((ordersCountAfter) => {
-        if (ordersCountAfter.to('number') - ordersCountBefore.to('number') !== 1) {
-          throw new Error('Order failed to create')
-        }
-        return ordersCountBefore
-      })
-    })
-  })
-}
-
-function parseOrderCreationTransactionReceipt(transactionReceipt) {
-}
-
-function getOrdersCount(orderReg) {
-  return orderReg.fetch('ordersCount()')
-}
-
-function getOrder(orderReg, id) {
-  const order = {
-    products: [],
-    updates: []
-  }
-  return Q.all([
-    orderReg.fetch('orderInfoAs(uint256)', [id]),
-    orderReg.fetch('orderInfoBs(uint256)', [id])
-  ]).then((orders) => {
-    orders.forEach((_order) => {
-      _.merge(order, _order)
-    })
-    const productsLength = order.products.length = order.productsCount.to('number')
-    const updatesLength = order.updates.length = order.updatesCount.to('number')
-    const productFetches = _.range(productsLength).map((index) => {
-      return orderReg.fetch('ordersProducts(uint256,uint256)', [id, new Amorph(index, 'number')]).then((product) => {
-        order.products[index] = product
-      })
-    })
-    const updateFetches = _.range(updatesLength).map((index) => {
-      return orderReg.fetch('ordersUpdates(uint256,uint256)', [id, new Amorph(index, 'number')]).then((update) => {
-        order.updates[index] = update
-      })
-    })
-    return Q.all(productFetches.concat(updateFetches)).then(() => {
-      return order
-    })
-  })
-}
