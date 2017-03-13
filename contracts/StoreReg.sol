@@ -1,14 +1,14 @@
 pragma solidity ^0.4.8;
 
 import "owned.sol";
-import "Filestore.sol";
+import "Planetoid.sol";
 
 contract StoreReg is owned {
 
-  Filestore public filestore;
+  Planetoid public planetoid;
 
-  function setFilestore(Filestore _filestore) onlyowner(msg.sender) {
-    filestore = _filestore;
+  function setPlanetoid(Planetoid _planetoid) onlyowner(msg.sender) {
+    planetoid = _planetoid;
   }
 
   struct Store {
@@ -36,7 +36,7 @@ contract StoreReg is owned {
     }
 		validateAlias(alias);
     stores[alias].owner = msg.sender;
-    stores[alias].metaHash = filestore.addFile(meta);
+    stores[alias].metaHash = planetoid.addDocument(meta);
     Register(alias, msg.sender, stores[alias].metaHash);
   }
 
@@ -52,7 +52,7 @@ contract StoreReg is owned {
   }
 
   function setMeta(bytes32 alias, bytes meta) onlystoreowner(alias) {
-    stores[alias].metaHash = filestore.addFile(meta);
+    stores[alias].metaHash = planetoid.addDocument(meta);
     SetMeta(alias, stores[alias].metaHash);
   }
 

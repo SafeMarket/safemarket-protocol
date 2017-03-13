@@ -3,8 +3,9 @@ const utils = require('../')
 const storeParams = require('./storeParams')
 const accounts = require('./accounts')
 const storeRegPromise = require('./storeReg')
-const filestorePromise = require('./filestore')
+const planetoidPromise = require('./planetoid')
 const Amorph = require('amorph')
+const planetoidUtils = require('planetoid-utils')
 
 const deferred = Q.defer()
 
@@ -14,7 +15,7 @@ describe('Store', () => {
 
   const storeAlias = new Amorph('mystore', 'ascii')
   let storeReg
-  let filestore
+  let planetoid
   let marshalledStoreMeta
   let unmarshalledStoreMeta
 
@@ -25,8 +26,8 @@ describe('Store', () => {
   })
 
   before(() => {
-    return filestorePromise.then((_filestore) => {
-      filestore = _filestore
+    return planetoidPromise.then((_planetoid) => {
+      planetoid = _planetoid
     })
   })
 
@@ -46,8 +47,11 @@ describe('Store', () => {
 
   it('should fetch marshalled store meta', () => {
     return storeReg.fetch('stores(bytes32)', [storeAlias]).then((store) => {
-      return filestore.fetch('files(bytes32)', [store.metaHash]).then((_marshalledStoreMeta) => {
-        unmarshalledStoreMeta = utils.unmarshalStoreMeta(_marshalledStoreMeta)
+      return planetoid.fetch('records(bytes32)', [store.metaHash]).then((_record) => {
+        const record = planetoidUtils.unmarshalRecord(_record)
+        return planetoid.fetch('documents(bytes32)', [record.documentHash]).then((document) => {
+          unmarshalledStoreMeta = utils.unmarshalStoreMeta(document)
+        })
       })
     })
   })

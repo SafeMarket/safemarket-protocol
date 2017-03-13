@@ -3,7 +3,7 @@ pragma solidity ^0.4.8;
 //TODO: Overflow and underflow checks
 
 import "owned.sol";
-import "Filestore.sol";
+import "Planetoid.sol";
 
 contract OrderReg is owned {
 
@@ -15,7 +15,7 @@ contract OrderReg is owned {
     Shipped
   }
 
-  Filestore public filestore;
+  Planetoid public planetoid;
 
   uint256 public affiliateFeeMicroperun;
   uint256 public storePrefund;
@@ -26,8 +26,8 @@ contract OrderReg is owned {
 		prices[currency] = price;
 	}
 
-  function setFilestore(Filestore _filestore) onlyowner(msg.sender) {
-    filestore = _filestore;
+  function setPlanetoid(Planetoid _planetoid) onlyowner(msg.sender) {
+    planetoid = _planetoid;
   }
 
   function setAffiliateFeeMicroperun(uint256 _affiliateFeeMicroperun) onlyowner(msg.sender) {
@@ -41,7 +41,6 @@ contract OrderReg is owned {
   struct Order {
     Status status;
     bytes32 buyerStrippedPublicKey;
-    uint256 createdAt;
     uint256 cancelledAt;
     uint256 shippedAt;
     address buyer;
@@ -51,16 +50,14 @@ contract OrderReg is owned {
     uint256 prebufferCURR;
     uint256 value;
     bytes32 encapsulatedMetaHash;
-  }
-
-  struct Message {
-    bytes32 messageHash;
-    address sender;
-    uint256 timestamp;
+    mapping(uint256 => bytes32) spemHashes;
+    uint256 spemHashesCount;
   }
 
   mapping(bytes32 => Order) public orders;
-  mapping(bytes32 => Message[]) public messages;
+  function ordersSpemHashes(bytes32 orderId, uint256 spemHashesIndex) constant returns (bytes32) {
+    return orders[orderId].spemHashes[spemHashesIndex];
+  }
 
   function create (
     bytes32 orderId,
@@ -72,7 +69,7 @@ contract OrderReg is owned {
     bytes encapsulatedMeta
   ) payable {
 
-    if (orders[orderId].createdAt != 0) {
+    if (orders[orderId].buyer != 0) {
       throw;
     }
 
@@ -81,14 +78,13 @@ contract OrderReg is owned {
     }
 
     orders[orderId].buyerStrippedPublicKey = buyerStrippedPublicKey;
-    orders[orderId].createdAt = now;
     orders[orderId].buyer = msg.sender;
     orders[orderId].store = store;
     orders[orderId].affiliate = affiliate;
     orders[orderId].currency = currency;
     orders[orderId].prebufferCURR = prebufferCURR;
     orders[orderId].value = msg.value - storePrefund;
-    orders[orderId].encapsulatedMetaHash = filestore.addFile(encapsulatedMeta);
+    orders[orderId].encapsulatedMetaHash = planetoid.addDocument(encapsulatedMeta);
 
 
     _send(store, storePrefund);
@@ -146,4 +142,35 @@ contract OrderReg is owned {
     _send(orders[orderId].buyer, orders[orderId].value - storePayout - affiliatePayout);
   }
 
+  function addMessage(bytes32 orderId, bytes encapsulatedMessage) returns (bytes32) {
+
+    if (msg.sender == orders[orderId].store) {
+      uint256 gasRefund = msg.gas / 2;
+      if (gasRefund < orders[orderId].value) {
+        // TODO: underflow protection
+        orders[orderId].value -= gasRefund;
+        _send(tx.origin, gasRefund);
+      }
+    } else if (msg.sender != orders[orderId].buyer) {
+      throw;
+    }
+
+    bytes20 sender = bytes20(msg.sender);
+    // spem := senderPrepenededEncapsulatedMessage
+    bytes memory spem = new bytes(encapsulatedMessage.length + 20);
+    assembly {
+      mstore(add(spem, 32), sender)
+    }
+    for (uint i = 0; i <= (encapsulatedMessage.length / 32); ++i) {
+      assembly {
+        mstore(
+          add(spem, add(52, mul(i, 32))),
+          mload(add(encapsulatedMessage, add(32, mul(i, 32))))
+        )
+      }
+    }
+    bytes32 spemHash = planetoid.addDocument(spem);
+    orders[orderId].spemHashes[orders[orderId].spemHashesCount++] = spemHash;
+    return spemHash;
+  }
 }

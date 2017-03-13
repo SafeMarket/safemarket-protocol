@@ -6,12 +6,11 @@ const SolWrapper = require('ultralightbeam/lib/SolWrapper')
 const accounts = require('./accounts')
 const Amorph = require('../modules/Amorph')
 const random = require('./random')
-const keccak256 = require('keccak256-amorph')
-const filestorePromise = require('./filestore')
-const Account = require('ethereum-account-amorph')
+const planetoidPromise = require('./planetoid')
 const defaultBalance = require('./defaultBalance')
 const utils = require('../')
 const priceParams = require('./priceParams')
+const planetoidUtils = require('planetoid-utils')
 
 const deferred = Q.defer()
 
@@ -28,8 +27,8 @@ describe('OrderReg', () => {
   const payoutAddress = random(20)
 
   let orderReg
-  let filestore
-  let storePrefund = new Amorph('10000000000000000', 'number.string')
+  let planetoid
+  const storePrefund = new Amorph('10000000000000000', 'number.string')
   const affiliateFeeMicroperun = new Amorph('50000', 'number.string')
   const value = storePrefund.as('bignumber', (bignumber) => {
     return bignumber.times(2)
@@ -40,8 +39,8 @@ describe('OrderReg', () => {
   })
 
   before(() => {
-    return filestorePromise.then((_filestore) => {
-      filestore = _filestore
+    return planetoidPromise.then((_planetoid) => {
+      planetoid = _planetoid
     })
   })
 
@@ -89,12 +88,12 @@ describe('OrderReg', () => {
     }))
   })
 
-  it('orderReg should set filestore', () => {
-    return orderReg.broadcast('setFilestore(address)', [filestore.address]).getTransactionReceipt()
+  it('orderReg should set planetoid', () => {
+    return orderReg.broadcast('setPlanetoid(address)', [planetoid.address]).getTransactionReceipt()
   })
 
-  it('filestore should be correct', () => {
-    return orderReg.fetch('filestore()').should.eventually.amorphEqual(filestore.address)
+  it('planetoid should be correct', () => {
+    return orderReg.fetch('planetoid()').should.eventually.amorphEqual(planetoid.address)
   })
 
   it('create order', () => {
@@ -115,7 +114,6 @@ describe('OrderReg', () => {
 
   it('order should have correct values', () => {
     return orderReg.fetch('orders(bytes32)', [orderId]).then((order) => {
-      order.createdAt.should.amorphEqual(ultralightbeam.blockPoller.block.timestamp)
       order.shippedAt.should.amorphEqual(zero)
       order.status.should.amorphEqual(zero)
       order.buyer.should.amorphEqual(accounts.default.address)
@@ -124,7 +122,11 @@ describe('OrderReg', () => {
       // order.currency.should.amorphEqual(currency)
       order.prebufferCURR.should.amorphEqual(prebufferCURR)
       order.value.should.amorphEqual(value)
-      order.encapsulatedMetaHash.should.amorphEqual(keccak256(encapsulatedOrderMeta))
+      return planetoid.fetch('records(bytes32)', [order.encapsulatedMetaHash]).then((_record) => {
+        const record = planetoidUtils.unmarshalRecord(_record)
+        record.timestamp.should.amorphEqual(ultralightbeam.blockPoller.block.timestamp)
+        return planetoid.fetch('documents(bytes32)', [record.documentHash]).should.eventually.amorphEqual(encapsulatedOrderMeta)
+      })
     })
   })
 

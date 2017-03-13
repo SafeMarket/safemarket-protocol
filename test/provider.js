@@ -5,7 +5,7 @@ const defaultBalance = require('./defaultBalance')
 
 module.exports = TestRPC.provider({
   gasLimit: 4000000,
-  blocktime: 1,
+  blocktime: 2,
   accounts: _.map(accounts, (account) => {
     return {
       balance: defaultBalance.to('number'),

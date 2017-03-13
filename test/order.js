@@ -4,12 +4,13 @@ const Amorph = require('amorph')
 const random = require('random-amorph')
 const storePromise = require('./store')
 const utils = require('../')
-const filestorePromise = require('./filestore')
+const planetoidPromise = require('./planetoid')
 const ultralightbeam = require('./ultralightbeam')
 const orderRegPromise = require('./orderReg')
 const keccak256 = require('keccak256-amorph')
 const storeRegPromise = require('./storeReg')
 const orderParams = require('./orderParams')
+const planetoidUtils = require('planetoid-utils')
 
 const deferred = Q.defer()
 
@@ -23,7 +24,7 @@ describe('order', () => {
 
   let storeReg
   let orderReg
-  let filestore
+  let planetoid
 
   let storeMetaHash
   let marshalledStoreMeta
@@ -31,7 +32,9 @@ describe('order', () => {
   let marshalledOrderMeta
   let unmarshalledOrderMeta
   let encapsulatedOrderMeta
+  let message1
   let encapsulatedMessage1
+  let message2
   let encapsulatedMessage2
   let linkedStoreAddress
   let linkedAffiliateAddress
@@ -64,8 +67,8 @@ describe('order', () => {
   })
 
   before(() => {
-    return filestorePromise.then((_filestore) => {
-      filestore = _filestore
+    return planetoidPromise.then((_planetoid) => {
+      planetoid = _planetoid
     })
   })
 
@@ -86,9 +89,12 @@ describe('order', () => {
     it('should get store meta', () => {
       return storeReg.fetch('stores(bytes32)', [storeAlias]).then((store) => {
         storeMetaHash = store.metaHash
-        return filestore.fetch('files(bytes32)', [store.metaHash]).then((_marshalledStoreMeta) => {
-          marshalledStoreMeta = _marshalledStoreMeta
-          unmarshalledStoreMeta = utils.unmarshalStoreMeta(marshalledStoreMeta)
+        return planetoid.fetch('records(bytes32)', [store.metaHash]).then((_record) => {
+          const record = planetoidUtils.unmarshalRecord(_record)
+          return planetoid.fetch('documents(bytes32)', [record.documentHash]).then((document) => {
+            marshalledStoreMeta = document
+            unmarshalledStoreMeta = utils.unmarshalStoreMeta(marshalledStoreMeta)
+          })
         })
       })
     })
@@ -180,7 +186,6 @@ describe('order', () => {
     it('should have correct values', () => {
       order.status.to('number').should.equal(0)
       order.buyerStrippedPublicKey.should.amorphEqual(utils.stripCompressedPublicKey(accounts.default.compressedPublicKey))
-      order.createdAt.should.amorphEqual(ultralightbeam.blockPoller.block.timestamp)
       order.shippedAt.should.amorphEqual(zero)
       order.buyer.should.amorphEqual(accounts.default.address)
       order.store.should.amorphEqual(linkedStoreAddress)
@@ -188,7 +193,6 @@ describe('order', () => {
       // order.currency.should.amorphEqual(unmarshalledStoreMeta.currency)
       order.prebufferCURR.should.amorphEqual(prebufferCURR)
       order.value.should.amorphEqual(value)
-      order.encapsulatedMetaHash.should.amorphEqual(keccak256(encapsulatedOrderMeta))
     })
     it('should be able to get order key', () => {
       const buyerPublicKey = utils.unstripCompressedPublicKey(order.buyerStrippedPublicKey)
@@ -201,8 +205,11 @@ describe('order', () => {
       return ultralightbeam.eth.getBalance(order.store).should.eventually.amorphEqual(storePrefund)
     })
     it('should be able to fetch encapsulatedOrderMeta', () => {
-      filestore.fetch('files(bytes32)', [order.encapsulatedMetaHash]).then((_encapsulatedOrderMeta) => {
-        _encapsulatedOrderMeta.should.amorphEqual(encapsulatedOrderMeta)
+      planetoid.fetch('records(bytes32)', [order.encapsulatedMetaHash]).then((_record) => {
+        const record = planetoidUtils.unmarshalRecord(_record)
+        planetoid.fetch('documents(bytes32)', [record.documentHash]).then((document) => {
+          document.should.amorphEqual(encapsulatedOrderMeta)
+        })
       })
     })
     it('should be able to unencapsulate/decrypt/unmarshal encapsulatedOrderMeta', () => {
@@ -257,9 +264,54 @@ describe('order', () => {
         storePayout.to('bignumber').div(estimatedStorePayout.to('bignumber')).toNumber().should.be.within(0.95, 1)
       })
     })
-    it('linked store address should have zero', () => {
-      return ultralightbeam.eth.getBalance(linkedStoreAddress).should.eventually.equal(zero)
+    it('add a new message (as store)', () => {
+      message1 = new Amorph('Your thing has shipped. Thanks for shopping with us!', 'ascii')
+      const iv = random(16)
+      const encryptedMessage1 = utils.encrypt(message1, orderKey, iv)
+      encapsulatedMessage1 = utils.encapsulate(encryptedMessage1, iv)
+      return orderReg.broadcast('addMessage(bytes32,bytes)', [
+        orderId, encapsulatedMessage1
+      ], { from: accounts.store.deriveLinkedAccount(orderKey) }).getConfirmation()
     })
-    it('should add an new message')
+    it('add a new message (as buyer)', () => {
+      message2 = new Amorph('Received it. Thanks!', 'ascii')
+      const iv = random(16)
+      const encryptedMessage2 = utils.encrypt(message2, orderKey, iv)
+      encapsulatedMessage2 = utils.encapsulate(encryptedMessage2, iv)
+      return orderReg.broadcast('addMessage(bytes32,bytes)', [
+        orderId, encapsulatedMessage2
+      ]).getConfirmation()
+    })
+    it('should be able to retrieve messages (2)', () => {
+      return orderReg.fetch('orders(bytes32)', [orderId]).then((_order) => {
+        _order.spemHashesCount.to('number').should.equal(2)
+        return Q.all([
+          orderReg.fetch('ordersSpemHashes(bytes32,uint256)', [
+            orderId, zero
+          ]).then((spemHash) => {
+            return planetoid.fetch('records(bytes32)', [spemHash]).then((_record) => {
+              const record = planetoidUtils.unmarshalRecord(_record)
+              return planetoid.fetch('documents(bytes32)', [record.documentHash]).then((_spem) => {
+                const spem = utils.unmarshalSpem(_spem)
+                spem.sender.should.amorphEqual(linkedStoreAddress)
+                spem.encapsulatedMessage.should.amorphEqual(encapsulatedMessage1)
+              })
+            })
+          }),
+          orderReg.fetch('ordersSpemHashes(bytes32,uint256)', [
+            orderId, new Amorph(1, 'number')
+          ]).then((spemHash) => {
+            return planetoid.fetch('records(bytes32)', [spemHash]).then((_record) => {
+              const record = planetoidUtils.unmarshalRecord(_record)
+              return planetoid.fetch('documents(bytes32)', [record.documentHash]).then((_spem) => {
+                const spem = utils.unmarshalSpem(_spem)
+                spem.sender.should.amorphEqual(accounts.default.address)
+                spem.encapsulatedMessage.should.amorphEqual(encapsulatedMessage2)
+              })
+            })
+          })
+        ])
+      })
+    })
   })
 })

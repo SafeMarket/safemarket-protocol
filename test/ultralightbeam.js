@@ -38,6 +38,8 @@ const ultralightbeam = new Ultralightbeam(provider, {
       const gasCost = gas.as('bignumber', (bignumber) => {
         return bignumber.times(gasPrice.to('bignumber'))
       })
+      console.log('gasCost:', gasCost.to('number'))
+      console.log('balance:', balance.to('number'))
       if (gasCost.to('bignumber').gt(balance.to('bignumber'))) {
         console.log('gas cost:', gasCost.to('number'))
         console.log('balance:', balance.to('number'))
@@ -45,7 +47,7 @@ const ultralightbeam = new Ultralightbeam(provider, {
       }
 
       const multipliedGas = gas.as('bignumber', (_bignumber) => {
-        let bignumber = _bignumber.times(2).floor()
+        let bignumber = _bignumber.times(1.2).floor()
         if (bignumber.gt(gasLimit)) {
           bignumber = new BigNumber(gasLimit)
         }

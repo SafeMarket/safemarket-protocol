@@ -1,14 +1,13 @@
 const contracts = require('../modules/contracts')
 const Q = require('q')
-const parseTransactionReceipt = require('../modules/parseTransactionReceipt')
 const ultralightbeam = require('./ultralightbeam')
 const SolDeployTranasctionRequest = require('ultralightbeam/lib/SolDeployTransactionRequest')
 const SolWrapper = require('ultralightbeam/lib/SolWrapper')
 const accounts = require('./accounts')
 const Amorph = require('../modules/Amorph')
 const random = require('random-amorph')
-const filestorePromise = require('./filestore')
-const keccak256 = require('keccak256-amorph')
+const planetoidPromise = require('./planetoid')
+const planetoidUtils = require('planetoid-utils')
 
 const deferred = Q.defer()
 
@@ -17,13 +16,13 @@ module.exports = deferred.promise
 describe('StoreReg', () => {
 
   const meta = random(120)
-  let filestore
+  let planetoid
   let storeReg
   let user
 
   before(() => {
-    return filestorePromise.then((_filestore) => {
-      filestore = _filestore
+    return planetoidPromise.then((_planetoid) => {
+      planetoid = _planetoid
     })
   })
 
@@ -44,12 +43,12 @@ describe('StoreReg', () => {
       })
   })
 
-  it('should set filestore', () => {
-    return storeReg.broadcast('setFilestore(address)', [filestore.address]).getConfirmation()
+  it('should set planetoid', () => {
+    return storeReg.broadcast('setPlanetoid(address)', [planetoid.address]).getConfirmation()
   })
 
-  it('filestore should be correct', () => {
-    return storeReg.fetch('filestore()').should.eventually.amorphEqual(filestore.address)
+  it('planetoid should be correct', () => {
+    return storeReg.fetch('planetoid()').should.eventually.amorphEqual(planetoid.address)
   })
 
   it('cannot register a blank alias', () => {
@@ -86,7 +85,15 @@ describe('StoreReg', () => {
 
   it('user should be correct', () => {
     user.owner.should.amorphEqual(accounts.default.address)
-    user.metaHash.should.amorphEqual(keccak256(meta))
+  })
+
+  it('should be able to get meta from planteoid', () => {
+    return planetoid.fetch('records(bytes32)', [user.metaHash]).then((_record) => {
+      const record = planetoidUtils.unmarshalRecord(_record)
+      return planetoid.fetch('documents(bytes32)', [record.documentHash]).then((_meta) => {
+        meta.should.amorphEqual(_meta)
+      })
+    })
   })
 
 })

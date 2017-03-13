@@ -147,3 +147,15 @@ module.exports.unstripCompressedPublicKey = function unstripCompressedPublicKey(
     return [postiveCompressedPublicKeyPrefix].concat(array)
   })
 }
+
+module.exports.unmarshalSpem = function unmarshalSpem(spem) {
+  arguguard('unmarshalSpem', [Amorph], arguments)
+  return {
+    sender: spem.as('array', (array) => {
+      return array.slice(0, 20)
+    }),
+    encapsulatedMessage: spem.as('array', (array) => {
+      return array.slice(20)
+    })
+  }
+}
