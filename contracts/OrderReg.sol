@@ -83,16 +83,18 @@ contract OrderReg is owned {
     orders[orderId].affiliate = affiliate;
     orders[orderId].currency = currency;
     orders[orderId].prebufferCURR = prebufferCURR;
-    orders[orderId].value = msg.value - storePrefund;
+    orders[orderId].value = msg.value;
     orders[orderId].encapsulatedMetaHash = planetoid.addDocument(encapsulatedMeta);
 
 
-    _send(store, storePrefund);
+    _send(orderId, store, storePrefund);
   }
 
   event Send(address addr, uint256 value);
 
-  function _send(address addr, uint256 value) internal {
+  function _send(bytes32 orderId, address addr, uint256 value) internal {
+    if (orders[orderId].value < value) { value = orders[orderId].value; }
+    orders[orderId].value -= value;
     if(!addr.send(value)) { throw; }
     Send(addr, value);
   }
@@ -133,23 +135,22 @@ contract OrderReg is owned {
     if (orders[orderId].affiliate != address(0)) {
       uint256 affiliatePayout = (storePayout * affiliateFeeMicroperun) / 1000000;
       storePayout = storePayout - affiliatePayout;
-      _send(orders[orderId].affiliate, affiliatePayout);
+      _send(orderId, orders[orderId].affiliate, affiliatePayout);
     } else {
       throw;
     }
 
-    _send(payoutAddress, storePayout);
-    _send(orders[orderId].buyer, orders[orderId].value - storePayout - affiliatePayout);
+    _send(orderId, payoutAddress, storePayout);
+    _send(orderId, orders[orderId].buyer, orders[orderId].value - storePayout - affiliatePayout);
   }
 
-  function addMessage(bytes32 orderId, bytes encapsulatedMessage) returns (bytes32) {
-
+  function addMessage(bytes32 orderId, bytes encapsulatedMessage) returns (bytes32 spemHash) {
     if (msg.sender == orders[orderId].store) {
       uint256 gasRefund = msg.gas / 2;
       if (gasRefund < orders[orderId].value) {
         // TODO: underflow protection
         orders[orderId].value -= gasRefund;
-        _send(tx.origin, gasRefund);
+        _send(orderId, tx.origin, gasRefund);
       }
     } else if (msg.sender != orders[orderId].buyer) {
       throw;
@@ -169,7 +170,7 @@ contract OrderReg is owned {
         )
       }
     }
-    bytes32 spemHash = planetoid.addDocument(spem);
+    spemHash = planetoid.addDocument(spem);
     orders[orderId].spemHashes[orders[orderId].spemHashesCount++] = spemHash;
     return spemHash;
   }

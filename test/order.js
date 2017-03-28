@@ -265,7 +265,7 @@ describe('order', () => {
       })
     })
     it('add a new message (as store)', () => {
-      message1 = new Amorph('Your thing has shipped. Thanks for shopping with us!', 'ascii')
+      message1 = new Amorph('Received it. Thanks!', 'ascii')
       const iv = random(16)
       const encryptedMessage1 = utils.encrypt(message1, orderKey, iv)
       encapsulatedMessage1 = utils.encapsulate(encryptedMessage1, iv)
@@ -280,7 +280,7 @@ describe('order', () => {
       encapsulatedMessage2 = utils.encapsulate(encryptedMessage2, iv)
       return orderReg.broadcast('addMessage(bytes32,bytes)', [
         orderId, encapsulatedMessage2
-      ]).getConfirmation()
+      ], { from: accounts.default }).getConfirmation()
     })
     it('should be able to retrieve messages (2)', () => {
       return orderReg.fetch('orders(bytes32)', [orderId]).then((_order) => {

@@ -30,15 +30,9 @@ describe('Planetoid', () => {
   })
 
   it('should instantiate', () => {
-    const transactionRequest = new SolDeployTranasctionRequest(
-      contracts.Planetoid.code, contracts.Planetoid.abi, []
-    )
     return ultralightbeam
-      .sendTransaction(transactionRequest)
-      .getTransactionReceipt().then((transactionReceipt) => {
-        planetoid = new SolWrapper(
-          ultralightbeam, contracts.Planetoid.abi, transactionReceipt.contractAddress
-        )
+      .solDeploy(contracts.Planetoid.code, contracts.Planetoid.abi, [], {}).then((_planetoid) => {
+        planetoid = _planetoid
       })
   })
 
@@ -53,7 +47,7 @@ describe('Planetoid', () => {
   })
 
   it('should download documents', () => {
-    return planetoid.fetch('rootRecordHash()').then((rootRecordHash) => {
+    return planetoid.fetch('rootRecordHash()', []).then((rootRecordHash) => {
       return planetoidUtils.downloadRecords(rootRecordHash, (recordhash) => {
         return planetoid.fetch('records(bytes32)', [recordhash]).then((record) => {
           return record

@@ -31,48 +31,41 @@ describe('StoreReg', () => {
   })
 
   it('should instantiate', () => {
-    const transactionRequest = new SolDeployTranasctionRequest(
-      contracts.StoreReg.code, contracts.StoreReg.abi, []
-    )
-    return ultralightbeam
-      .sendTransaction(transactionRequest)
-      .getTransactionReceipt().then((transactionReceipt) => {
-        storeReg = new SolWrapper(
-          ultralightbeam, contracts.StoreReg.abi, transactionReceipt.contractAddress
-        )
-      })
+    return ultralightbeam.solDeploy(contracts.StoreReg.code, contracts.StoreReg.abi, [], {}).then((_storeReg) => {
+      storeReg = _storeReg
+    })
   })
 
   it('should set planetoid', () => {
-    return storeReg.broadcast('setPlanetoid(address)', [planetoid.address]).getConfirmation()
+    return storeReg.broadcast('setPlanetoid(address)', [planetoid.address], {}).getConfirmation()
   })
 
   it('planetoid should be correct', () => {
-    return storeReg.fetch('planetoid()').should.eventually.amorphEqual(planetoid.address)
+    return storeReg.fetch('planetoid()', []).should.eventually.amorphEqual(planetoid.address)
   })
 
   it('cannot register a blank alias', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('', 'ascii'), meta]).getConfirmation().should.be.rejectedWith(Error)
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
   it('cannot register an alias with an uppercase letter', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myAlias', 'ascii'), meta]).getConfirmation().should.be.rejectedWith(Error)
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myAlias', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
   it('cannot register an alias with an space', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('my alias', 'ascii'), meta]).getConfirmation().should.be.rejectedWith(Error)
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('my alias', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
   it('cannot register an alias with a middle 0x00', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('300030', 'hex'), meta]).getConfirmation().should.be.rejectedWith(Error)
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('300030', 'hex'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
   it('can register "myalias"', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myalias', 'ascii'), meta]).getConfirmation()
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myalias', 'ascii'), meta], {}).getConfirmation()
   })
 
   it('can NOT re-register "myalias"', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myalias', 'ascii'), meta]).getConfirmation().should.be.rejectedWith(Error)
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myalias', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
   it('can retreive user associated with "myalias"', () => {

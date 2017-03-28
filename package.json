@@ -44,13 +44,14 @@
     "secp256k1-amorph-utils": "0.0.2",
     "solc": "0.4.8",
     "solidity-sha3": "^0.4.1",
-    "ultralightbeam": "^0.16.4"
+    "ultralightbeam": "^0.20.0"
   },
   "dependencies": {
     "aes-128-cbc-amorph": "0.0.1",
     "amorph-parse-solc-output": "^0.1.0",
     "cross-converter": "0.0.6",
     "elliptic": "^6.4.0",
+    "ethereum-account-amorph": "0.0.2",
     "protobufjs": "^6.6.3",
     "protomorph": "0.0.1",
     "safecomm-utils": "^0.1.0",

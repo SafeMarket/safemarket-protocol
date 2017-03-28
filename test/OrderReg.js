@@ -45,20 +45,13 @@ describe('OrderReg', () => {
   })
 
   it('should create an orderReg', () => {
-    const transactionRequest = new SolDeployTranasctionRequest(
-      contracts.OrderReg.code, contracts.OrderReg.abi, []
-    )
-    return ultralightbeam
-      .sendTransaction(transactionRequest)
-      .getTransactionReceipt().then((transactionReceipt) => {
-        orderReg = new SolWrapper(
-          ultralightbeam, contracts.OrderReg.abi, transactionReceipt.contractAddress
-        )
-      })
+    return ultralightbeam.solDeploy(contracts.OrderReg.code, contracts.OrderReg.abi, [], {}).then((_orderReg) => {
+      orderReg = _orderReg
+    })
   })
 
   it('should set storePrefund', () => {
-    return orderReg.broadcast('setStorePrefund(uint256)', [storePrefund]).getConfirmation()
+    return orderReg.broadcast('setStorePrefund(uint256)', [storePrefund], {}).getConfirmation()
   })
 
   it('should get storePrefund', () => {
@@ -66,7 +59,7 @@ describe('OrderReg', () => {
   })
 
   it('should set affiliateFeeMicroperun', () => {
-    return orderReg.broadcast('setAffiliateFeeMicroperun(uint256)', [affiliateFeeMicroperun]).getConfirmation()
+    return orderReg.broadcast('setAffiliateFeeMicroperun(uint256)', [affiliateFeeMicroperun], {}).getConfirmation()
   })
 
   it('should get affiliateFeeMicroperun', () => {
@@ -78,7 +71,7 @@ describe('OrderReg', () => {
       return orderReg.broadcast('setPrice(bytes4,uint256)', [
         param.currency,
         param.price
-      ]).getConfirmation()
+      ], {}).getConfirmation()
     }))
   })
 
@@ -89,11 +82,11 @@ describe('OrderReg', () => {
   })
 
   it('orderReg should set planetoid', () => {
-    return orderReg.broadcast('setPlanetoid(address)', [planetoid.address]).getTransactionReceipt()
+    return orderReg.broadcast('setPlanetoid(address)', [planetoid.address], {}).getTransactionReceipt()
   })
 
   it('planetoid should be correct', () => {
-    return orderReg.fetch('planetoid()').should.eventually.amorphEqual(planetoid.address)
+    return orderReg.fetch('planetoid()', []).should.eventually.amorphEqual(planetoid.address)
   })
 
   it('create order', () => {
@@ -132,7 +125,7 @@ describe('OrderReg', () => {
 
   it('store should be prefunded', () => {
     return ultralightbeam.eth.getBalance(accounts.tempStore.address).then((balance) => {
-      balance.to('bignumber').minus(defaultBalance.to('bignumber')).toNumber().should.equal(storePrefund.to('number'))
+      return balance.to('bignumber').minus(defaultBalance.to('bignumber')).toNumber().should.equal(storePrefund.to('number'))
     })
   })
 

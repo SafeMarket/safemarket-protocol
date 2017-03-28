@@ -8,9 +8,10 @@ module.exports = TestRPC.provider({
   blocktime: 2,
   accounts: _.map(accounts, (account) => {
     return {
-      balance: defaultBalance.to('number'),
+      balance: defaultBalance.to('hex.prefixed'),
       secretKey: account.privateKey.to('hex.prefixed')
     }
   }),
+  unlocked_accounts: _.map(accounts, (account) => { return account.address.to('hex.prefixed') }),
   locked: false
 })
