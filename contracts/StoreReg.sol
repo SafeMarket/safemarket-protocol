@@ -18,56 +18,56 @@ contract StoreReg is owned {
 
   mapping(bytes32 => Store) public stores;
 
-  modifier onlystoreowner(bytes32 alias) {
-    if (stores[alias].owner != msg.sender) {
+  modifier onlystoreowner(bytes32 storeId) {
+    if (stores[storeId].owner != msg.sender) {
       throw;
     }
     _;
   }
 
-  event Register(bytes32 alias, address owner, bytes32 metaHash);
-  event Unregister(bytes32 alias);
-  event SetMeta(bytes32 alias, bytes32 metaHash);
-  event SetOwner(bytes32 alias, address owner);
+  event Register(bytes32 storeId, address owner, bytes32 metaHash);
+  event Unregister(bytes32 storeId);
+  event SetMeta(bytes32 storeId, bytes32 metaHash);
+  event SetOwner(bytes32 storeId, address owner);
 
-  function register(bytes32 alias, bytes meta) {
-    if (stores[alias].owner != 0) {
+  function register(bytes32 storeId, bytes meta) {
+    if (stores[storeId].owner != 0) {
       throw;
     }
-		validateAlias(alias);
-    stores[alias].owner = msg.sender;
-    stores[alias].metaHash = planetoid.addDocument(meta);
-    Register(alias, msg.sender, stores[alias].metaHash);
+		validateStoreId(storeId);
+    stores[storeId].owner = msg.sender;
+    stores[storeId].metaHash = planetoid.addDocument(meta);
+    Register(storeId, msg.sender, stores[storeId].metaHash);
   }
 
-  function unregister(bytes32 alias) onlystoreowner(alias) {
-    stores[alias].owner = address(0);
-    stores[alias].metaHash = bytes32(0);
-    Unregister(alias);
+  function unregister(bytes32 storeId) onlystoreowner(storeId) {
+    stores[storeId].owner = address(0);
+    stores[storeId].metaHash = bytes32(0);
+    Unregister(storeId);
   }
 
-  function setOwner(bytes32 alias, address owner) onlystoreowner(alias) {
-    stores[alias].owner = owner;
-    SetOwner(alias, owner);
+  function setOwner(bytes32 storeId, address owner) onlystoreowner(storeId) {
+    stores[storeId].owner = owner;
+    SetOwner(storeId, owner);
   }
 
-  function setMeta(bytes32 alias, bytes meta) onlystoreowner(alias) {
-    stores[alias].metaHash = planetoid.addDocument(meta);
-    SetMeta(alias, stores[alias].metaHash);
+  function setMeta(bytes32 storeId, bytes meta) onlystoreowner(storeId) {
+    stores[storeId].metaHash = planetoid.addDocument(meta);
+    SetMeta(storeId, stores[storeId].metaHash);
   }
 
-  function validateAlias(bytes32 alias) constant {
-    if (alias == bytes32(0)) {
+  function validateStoreId(bytes32 storeId) constant {
+    if (storeId == bytes32(0)) {
 			throw;
 		}
     for (uint256 i = 0; i < 32; i ++) {
-			if (alias[i] == 0) {
+			if (storeId[i] == 0) {
 				break;
 			}
-			validateCharCode(uint256(alias[i]));
+			validateCharCode(uint256(storeId[i]));
 		}
 		for (uint256 j = i; j < 32; j ++) {
-			if(alias[j] != 0) {
+			if(storeId[j] != 0) {
 				throw;
 			}
 		}

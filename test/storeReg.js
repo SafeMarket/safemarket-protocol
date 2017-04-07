@@ -44,33 +44,33 @@ describe('StoreReg', () => {
     return storeReg.fetch('planetoid()', []).should.eventually.amorphEqual(planetoid.address)
   })
 
-  it('cannot register a blank alias', () => {
+  it('cannot register a blank storeId', () => {
     return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
-  it('cannot register an alias with an uppercase letter', () => {
+  it('cannot register an storeId with an uppercase letter', () => {
     return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myAlias', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
-  it('cannot register an alias with an space', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('my alias', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
+  it('cannot register an storeId with an space', () => {
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('my storeId', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
-  it('cannot register an alias with a middle 0x00', () => {
+  it('cannot register an storeId with a middle 0x00', () => {
     return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('300030', 'hex'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
-  it('can register "myalias"', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myalias', 'ascii'), meta], {}).getConfirmation()
+  it('can register "mystoreid"', () => {
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('mystoreid', 'ascii'), meta], {}).getConfirmation()
   })
 
-  it('can NOT re-register "myalias"', () => {
-    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('myalias', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
+  it('can NOT re-register "mystoreid"', () => {
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('mystoreid', 'ascii'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
-  it('can retreive user associated with "myalias"', () => {
+  it('can retreive user associated with "mystoreid"', () => {
     return storeReg.fetch('stores(bytes32)', [
-      new Amorph('myalias', 'ascii')
+      new Amorph('mystoreid', 'ascii')
     ]).then((_user) => {
       user = _user
     })
