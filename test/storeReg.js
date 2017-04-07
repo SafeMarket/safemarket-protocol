@@ -60,6 +60,10 @@ describe('StoreReg', () => {
     return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('300030', 'hex'), meta], {}).getConfirmation().should.be.rejectedWith(Error)
   })
 
+  it('can register "az_019"', () => {
+    return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('az_019', 'ascii'), meta], {}).getConfirmation()
+  })
+
   it('can register "mystoreid"', () => {
     return storeReg.broadcast('register(bytes32,bytes)', [new Amorph('mystoreid', 'ascii'), meta], {}).getConfirmation()
   })

@@ -74,15 +74,15 @@ contract StoreReg is owned {
   }
 
   function validateCharCode(uint256 charCode) constant {
-		if (charCode >= 48 && charCode < 57) {
-			// 0-9
-      return;
-    }
-    if (charCode >= 97 && charCode < 122) {
+    if (charCode >= 97 && charCode <= 122) {
 			// a-z
       return;
     }
-    if (charCode == 137) {
+    if (charCode >= 48 && charCode <= 57) {
+			// 0-9
+      return;
+    }
+    if (charCode == 95) {
 			// _
       return;
     }
