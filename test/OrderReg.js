@@ -1,8 +1,6 @@
 const contracts = require('../modules/contracts')
 const Q = require('q')
 const ultralightbeam = require('./ultralightbeam')
-const SolDeployTranasctionRequest = require('ultralightbeam/lib/SolDeployTransactionRequest')
-const SolWrapper = require('ultralightbeam/lib/SolWrapper')
 const accounts = require('./accounts')
 const Amorph = require('../modules/Amorph')
 const random = require('./random')
@@ -11,6 +9,7 @@ const defaultBalance = require('./defaultBalance')
 const utils = require('../')
 const priceParams = require('./priceParams')
 const planetoidUtils = require('planetoid-utils')
+const keccak256 = require('keccak256-amorph')
 
 const deferred = Q.defer()
 
@@ -21,6 +20,9 @@ describe('OrderReg', () => {
   const zero = new Amorph(0, 'number')
   const orderId = random(32)
   const currency = new Amorph('USD6', 'ascii')
+  const priceId = keccak256(accounts.default.address.as('array', (array) => {
+    return array.concat(currency.to('array'))
+  }))
   const prebufferCURR = random(32)
   const encapsulatedOrderMeta = random(128)
   const affiliate = random(20)
@@ -77,7 +79,10 @@ describe('OrderReg', () => {
 
   it('should get prices', () => {
     return Q.all(priceParams.map((param) => {
-      return orderReg.fetch('prices(bytes4)', [param.currency]).should.eventually.amorphEqual(param.price)
+      const _priceId = keccak256((accounts.default.address.as('array', (array) => {
+        return array.concat(param.currency.to('array'))
+      })))
+      return orderReg.fetch('prices(bytes32)', [_priceId]).should.eventually.amorphEqual(param.price)
     }))
   })
 
@@ -91,12 +96,12 @@ describe('OrderReg', () => {
 
   it('create order', () => {
     return orderReg.broadcast(
-      'create(bytes32,bytes32,address,address,bytes4,uint256,bytes)', [
+      'create(bytes32,bytes32,address,address,bytes32,uint256,bytes)', [
         orderId,
         utils.stripCompressedPublicKey(accounts.default.compressedPublicKey),
         accounts.tempStore.address,
         affiliate,
-        currency,
+        priceId,
         prebufferCURR,
         encapsulatedOrderMeta
       ], { value: value.as('bignumber', (bignumber) => {
@@ -112,7 +117,7 @@ describe('OrderReg', () => {
       order.buyer.should.amorphEqual(accounts.default.address)
       order.store.should.amorphEqual(accounts.tempStore.address)
       order.affiliate.should.amorphEqual(affiliate)
-      // order.currency.should.amorphEqual(currency)
+      order.priceId.should.amorphEqual(priceId)
       order.prebufferCURR.should.amorphEqual(prebufferCURR)
       order.value.should.amorphEqual(value)
       return planetoid.fetch('records(bytes32)', [order.encapsulatedMetaHash]).then((_record) => {

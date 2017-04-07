@@ -136,7 +136,7 @@ describe('order', () => {
     })
 
     it('should get store currency price', () => {
-      return orderReg.fetch('prices(bytes4)', [unmarshalledStoreMeta.currency]).then((_storeCurrencyPrice) => {
+      return orderReg.fetch('prices(bytes32)', [unmarshalledStoreMeta.priceId]).then((_storeCurrencyPrice) => {
         storeCurrencyPrice = _storeCurrencyPrice
         storeCurrencyPrice.should.not.amorphEqual(zero)
       })
@@ -161,12 +161,12 @@ describe('order', () => {
     })
 
     it('should create an order on the order reg', () => {
-      return orderReg.broadcast('create(bytes32,bytes32,address,address,bytes4,uint256,bytes)', [
+      return orderReg.broadcast('create(bytes32,bytes32,address,address,bytes32,uint256,bytes)', [
         orderId,
         utils.stripCompressedPublicKey(accounts.default.compressedPublicKey),
         linkedStoreAddress,
         linkedAffiliateAddress,
-        unmarshalledStoreMeta.currency,
+        unmarshalledStoreMeta.priceId,
         prebufferCURR,
         encapsulatedOrderMeta
       ], {
@@ -190,7 +190,7 @@ describe('order', () => {
       order.buyer.should.amorphEqual(accounts.default.address)
       order.store.should.amorphEqual(linkedStoreAddress)
       order.affiliate.should.amorphEqual(linkedAffiliateAddress)
-      // order.currency.should.amorphEqual(unmarshalledStoreMeta.currency)
+      order.priceId.should.amorphEqual(unmarshalledStoreMeta.priceId)
       order.prebufferCURR.should.amorphEqual(prebufferCURR)
       order.value.should.amorphEqual(value)
     })

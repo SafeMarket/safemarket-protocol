@@ -10,7 +10,7 @@ message Store {
   required bytes isOpen = 4;
   required bytes base = 5;
   required bytes info = 6;
-  required bytes currency = 7;
+  required bytes priceId = 7;
   required bytes minProductsTotal = 8;
   repeated StoreProduct products = 10;
   repeated StoreTransport transports = 11;

@@ -1,5 +1,8 @@
 const Amorph = require('../modules/Amorph')
 const accounts = require('./accounts')
+const keccak256 = require('keccak256-amorph')
+
+const currency = new Amorph('USD6', 'ascii')
 
 module.exports = {
   version: new Amorph('00', 'hex'),
@@ -8,7 +11,9 @@ module.exports = {
   isOpen: new Amorph(true, 'boolean'),
   base: new Amorph('us', 'ascii'),
   info: new Amorph('Info about my store', 'ascii'),
-  currency: new Amorph('USD6', 'ascii'),
+  priceId: keccak256(accounts.default.address.as('array', (array) => {
+    return array.concat(currency.to('array'))
+  })),
   minProductsTotal: new Amorph(10000000, 'number'),
   products: [{
     name: new Amorph('Chocolate chip cookies', 'ascii'),

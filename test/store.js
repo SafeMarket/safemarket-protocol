@@ -61,7 +61,7 @@ describe('Store', () => {
     unmarshalledStoreMeta.version.to('number').should.equal(0)
     unmarshalledStoreMeta.publicKey.should.amorphEqual(accounts.store.compressedPublicKey)
     unmarshalledStoreMeta.minProductsTotal.should.amorphEqual(storeParams.minProductsTotal)
-    unmarshalledStoreMeta.currency.should.amorphEqual(storeParams.currency)
+    unmarshalledStoreMeta.priceId.should.amorphEqual(storeParams.priceId)
     unmarshalledStoreMeta.products.should.have.length(2)
     unmarshalledStoreMeta.products[0].should.have.keys([
       'name',

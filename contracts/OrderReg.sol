@@ -20,10 +20,10 @@ contract OrderReg is owned {
   uint256 public affiliateFeeMicroperun;
   uint256 public storePrefund;
 
-  mapping(bytes4 => uint256) public prices;
+  mapping(bytes32 => uint256) public prices;
 
-	function setPrice(bytes4 currency, uint256 price) onlyowner(msg.sender) {
-		prices[currency] = price;
+	function setPrice(bytes4 currency, uint256 price) {
+		prices[sha3(msg.sender, currency)] = price;
 	}
 
   function setPlanetoid(Planetoid _planetoid) onlyowner(msg.sender) {
@@ -46,7 +46,7 @@ contract OrderReg is owned {
     address buyer;
     address store;
     address affiliate;
-    bytes4 currency;
+    bytes32 priceId;
     uint256 prebufferCURR;
     uint256 value;
     bytes32 encapsulatedMetaHash;
@@ -64,7 +64,7 @@ contract OrderReg is owned {
     bytes32 buyerStrippedPublicKey,
     address store,
     address affiliate,
-    bytes4 currency,
+    bytes32 priceId,
     uint256 prebufferCURR,
     bytes encapsulatedMeta
   ) payable {
@@ -81,7 +81,7 @@ contract OrderReg is owned {
     orders[orderId].buyer = msg.sender;
     orders[orderId].store = store;
     orders[orderId].affiliate = affiliate;
-    orders[orderId].currency = currency;
+    orders[orderId].priceId = priceId;
     orders[orderId].prebufferCURR = prebufferCURR;
     orders[orderId].value = msg.value;
     orders[orderId].encapsulatedMetaHash = planetoid.addDocument(encapsulatedMeta);
@@ -128,7 +128,7 @@ contract OrderReg is owned {
     orders[orderId].shippedAt = now;
     orders[orderId].status = Status.Shipped;
 
-    uint256 storePayout = orders[orderId].prebufferCURR * prices[orders[orderId].currency];
+    uint256 storePayout = orders[orderId].prebufferCURR * prices[orders[orderId].priceId];
     if (storePayout > orders[orderId].value) {
       storePayout = orders[orderId].value;
     }
