@@ -53,7 +53,7 @@
     "elliptic": "^6.4.0",
     "ethereum-account-amorph": "^0.0.2",
     "protobufjs": "^6.6.3",
-    "protomorph": "^0.0.3",
+    "protomorph": "0.0.5",
     "safecomm-utils": "^0.1.0",
     "testable-error": "^0.1.1"
   }
