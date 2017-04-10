@@ -14,6 +14,8 @@ message Store {
   required bytes minProductsTotal = 8;
   repeated StoreProduct products = 10;
   repeated StoreTransport transports = 11;
+  required bytes contact = 12;
+  required bytes tagline = 13;
 }
 
 message StoreProduct {

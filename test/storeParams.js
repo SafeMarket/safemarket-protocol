@@ -42,5 +42,7 @@ module.exports = {
     to: new Amorph('global', 'ascii'),
     price: new Amorph(20000000, 'number'),
     info: new Amorph('To every corner of the globe!', 'ascii')
-  }]
+  }],
+  contact: new Amorph('hello@satoshisbakery.com', 'ascii'),
+  tagline: new Amorph('The best in the biz', 'ascii')
 }
