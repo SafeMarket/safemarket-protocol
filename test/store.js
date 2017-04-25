@@ -63,6 +63,7 @@ describe('Store', () => {
     unmarshalledStoreMeta.minProductsTotal.should.amorphEqual(storeParams.minProductsTotal)
     unmarshalledStoreMeta.priceSetter.should.amorphEqual(storeParams.priceSetter)
     unmarshalledStoreMeta.currency.should.amorphEqual(storeParams.currency)
+    unmarshalledStoreMeta.bufferMicroperun.should.amorphEqual(storeParams.bufferMicroperun)
     unmarshalledStoreMeta.products.should.have.length(2)
     unmarshalledStoreMeta.products[0].should.have.keys([
       'name',

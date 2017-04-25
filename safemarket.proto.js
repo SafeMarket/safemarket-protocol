@@ -17,6 +17,7 @@ message Store {
   repeated StoreTransport transports = 11;
   required bytes contact = 12;
   required bytes tagline = 13;
+  required bytes bufferMicroperun = 14;
 }
 
 message StoreProduct {

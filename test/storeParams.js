@@ -42,5 +42,6 @@ module.exports = {
     info: new Amorph('To every corner of the globe!', 'ascii')
   }],
   contact: new Amorph('hello@satoshisbakery.com', 'ascii'),
-  tagline: new Amorph('The best in the biz', 'ascii')
+  tagline: new Amorph('The best in the biz', 'ascii'),
+  bufferMicroperun: new Amorph('50000', 'number.string')
 }
