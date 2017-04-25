@@ -20,9 +20,6 @@ describe('OrderReg', () => {
   const zero = new Amorph(0, 'number')
   const orderId = random(32)
   const currency = new Amorph('USD6', 'ascii')
-  const priceId = keccak256(accounts.default.address.as('array', (array) => {
-    return array.concat(currency.to('array'))
-  }))
   const prebufferCURR = random(32)
   const encapsulatedOrderMeta = random(128)
   const affiliate = random(20)
@@ -79,10 +76,7 @@ describe('OrderReg', () => {
 
   it('should get prices', () => {
     return Q.all(priceParams.map((param) => {
-      const _priceId = keccak256((accounts.default.address.as('array', (array) => {
-        return array.concat(param.currency.to('array'))
-      })))
-      return orderReg.fetch('prices(bytes32)', [_priceId]).should.eventually.amorphEqual(param.price)
+      return orderReg.fetch('prices(address,bytes4)', [accounts.default.address, param.currency]).should.eventually.amorphEqual(param.price)
     }))
   })
 
@@ -96,12 +90,13 @@ describe('OrderReg', () => {
 
   it('create order', () => {
     return orderReg.broadcast(
-      'create(bytes32,bytes32,address,address,bytes32,uint256,bytes)', [
+      'create(bytes32,bytes32,address,address,address,bytes4,uint256,bytes)', [
         orderId,
         utils.stripCompressedPublicKey(accounts.default.compressedPublicKey),
         accounts.tempStore.address,
         affiliate,
-        priceId,
+        accounts.default.address,
+        currency,
         prebufferCURR,
         encapsulatedOrderMeta
       ], { value: value.as('bignumber', (bignumber) => {
@@ -117,7 +112,8 @@ describe('OrderReg', () => {
       order.buyer.should.amorphEqual(accounts.default.address)
       order.store.should.amorphEqual(accounts.tempStore.address)
       order.affiliate.should.amorphEqual(affiliate)
-      order.priceId.should.amorphEqual(priceId)
+      order.priceSetter.should.amorphEqual(accounts.default.address)
+      order.currency.should.amorphEqual(currency)
       order.prebufferCURR.should.amorphEqual(prebufferCURR)
       order.value.should.amorphEqual(value)
       return planetoid.fetch('records(bytes32)', [order.encapsulatedMetaHash]).then((_record) => {
