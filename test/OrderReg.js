@@ -9,7 +9,6 @@ const defaultBalance = require('./defaultBalance')
 const utils = require('../')
 const priceParams = require('./priceParams')
 const planetoidUtils = require('planetoid-utils')
-const keccak256 = require('keccak256-amorph')
 
 const deferred = Q.defer()
 

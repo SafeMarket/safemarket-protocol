@@ -1,5 +1,4 @@
 const arguguard = require('arguguard')
-const Amorph = require('amorph')
 const protobufjs = require('protobufjs')
 const protofile = require('./safemarket.proto')
 const keccak256 = require('keccak256-amorph')
@@ -16,29 +15,29 @@ const ec = new EC('secp256k1')
 const postiveCompressedPublicKeyPrefix = 0x03
 
 exports.checkLength = function checkLength(amorph, length) {
-  arguguard('checkLength', [Amorph, 'number'], arguments)
+  arguguard('checkLength', ['Amorph', 'number'], arguments)
   if (!amorph.to('array').length === length) {
     throw new Error()
   }
 }
 
 exports.marshalStoreMeta = function marshalStoreMeta(object) {
-  arguguard('marshalStoreMeta', [Object], arguments)
+  arguguard('marshalStoreMeta', ['Object'], arguments)
   return protomorph.encode(storeProtoType, object)
 }
 
 exports.unmarshalStoreMeta = function unmarshalStoreMeta(marshalledStoreMeta) {
-  arguguard('marshalStoreMeta', [Amorph], arguments)
+  arguguard('marshalStoreMeta', ['Amorph'], arguments)
   return protomorph.decode(storeProtoType, marshalledStoreMeta)
 }
 
 exports.marshalOrderMeta = function marshalOrderMeta(object) {
-  arguguard('marshalOrderMeta', [Object], arguments)
+  arguguard('marshalOrderMeta', ['Object'], arguments)
   return protomorph.encode(orderProtoType, object)
 }
 
 exports.encrypt = function encrypt(plaintext, key, iv) {
-  arguguard('encrypt', [Amorph, Amorph, Amorph], arguments)
+  arguguard('encrypt', ['Amorph', 'Amorph', 'Amorph'], arguments)
   const paddedPlaintext = plaintext.as('array', (_array) => {
     const array = _array.slice(0)
     array.push(0x01)
@@ -51,7 +50,7 @@ exports.encrypt = function encrypt(plaintext, key, iv) {
 }
 
 exports.decrypt = function decrypt(ciphertext, key, iv) {
-  arguguard('decrypt', [Amorph, Amorph, Amorph], arguments)
+  arguguard('decrypt', ['Amorph', 'Amorph', 'Amorph'], arguments)
   const paddedPlaintext = aes.decrypt(ciphertext, key, iv)
   return paddedPlaintext.as('array', (array) => {
     const paddingStart = array.lastIndexOf(0x01)
@@ -60,7 +59,7 @@ exports.decrypt = function decrypt(ciphertext, key, iv) {
 }
 
 exports.encapsulate = function encapsulate(ciphertext, iv) {
-  arguguard('encapsulate', [Amorph, Amorph], arguments)
+  arguguard('encapsulate', ['Amorph', 'Amorph'], arguments)
   exports.checkLength(iv, 16)
   return iv.as('array', (array) => {
     return array.concat(ciphertext.to('array'))
@@ -68,7 +67,7 @@ exports.encapsulate = function encapsulate(ciphertext, iv) {
 }
 
 exports.unencapsulate = function unencapsulate(encapsulation) {
-  arguguard('unencapsulate', [Amorph], arguments)
+  arguguard('unencapsulate', ['Amorph'], arguments)
   return {
     iv: encapsulation.as('array', (array) => {
       return array.slice(0, 16)
@@ -80,7 +79,7 @@ exports.unencapsulate = function unencapsulate(encapsulation) {
 }
 
 exports.calculatePrebufferCURR = function calculatePrebufferCURR(storeMeta, orderMeta) {
-  arguguard('unencapsulate', [Object, Object], arguments)
+  arguguard('calculatePrebufferCURR', ['Object', 'Object'], arguments)
   const transportPrice = storeMeta.transports[orderMeta.transportId.to('number')].price
   const productPrices = orderMeta.products.map((orderProduct) => {
     const product = storeMeta.products[orderProduct.id.to('number')]
@@ -96,11 +95,12 @@ exports.calculatePrebufferCURR = function calculatePrebufferCURR(storeMeta, orde
 }
 
 exports.unmarshalOrderMeta = function unmarshalOrderMeta(marshalledStoreMeta) {
+  arguguard('unmarshalOrderMeta', ['Amorph'], arguments)
   return protomorph.decode(orderProtoType, marshalledStoreMeta)
 }
 
 exports.deriveLinkedAddress = function deriveLinkedAddress(link, publicKey) {
-  arguguard('getLinkedAddress', [Amorph, Amorph], arguments)
+  arguguard('getLinkedAddress', ['Amorph', 'Amorph'], arguments)
   const publicKeyLength = publicKey.to('array').length
   let uncompressedPublicKey
   if (publicKeyLength === 33) {
@@ -119,7 +119,7 @@ exports.deriveLinkedAddress = function deriveLinkedAddress(link, publicKey) {
 }
 
 module.exports.deriveBilateralKey = function deriveBilateralKey(privateKey, publicKey) {
-  arguguard('getBilateralKey', [Amorph, Amorph], arguments)
+  arguguard('getBilateralKey', ['Amorph', 'Amorph'], arguments)
   const derived = privateKey.as('buffer', (privateKeyBuffer) => {
     const ecKeypair = ec.keyFromPrivate(privateKeyBuffer)
     const ecPublicKey = ec.keyFromPublic(publicKey.to('buffer')).getPublic()
@@ -130,7 +130,7 @@ module.exports.deriveBilateralKey = function deriveBilateralKey(privateKey, publ
 }
 
 module.exports.stripCompressedPublicKey = function stripCompressedPublicKey(compressedPublicKey) {
-  arguguard('stripCompressedPublicKey', [Amorph], arguments)
+  arguguard('stripCompressedPublicKey', ['Amorph'], arguments)
   exports.checkLength(compressedPublicKey, 33)
   if (compressedPublicKey.to('array')[0] !== postiveCompressedPublicKeyPrefix) {
     throw new Error()
@@ -141,7 +141,7 @@ module.exports.stripCompressedPublicKey = function stripCompressedPublicKey(comp
 }
 
 module.exports.unstripCompressedPublicKey = function unstripCompressedPublicKey(strippedCompressedPublicKey) {
-  arguguard('unstripCompressedPublicKey', [Amorph], arguments)
+  arguguard('unstripCompressedPublicKey', ['Amorph'], arguments)
   exports.checkLength(strippedCompressedPublicKey, 32)
   return strippedCompressedPublicKey.as('array', (array) => {
     return [postiveCompressedPublicKeyPrefix].concat(array)
@@ -149,7 +149,7 @@ module.exports.unstripCompressedPublicKey = function unstripCompressedPublicKey(
 }
 
 module.exports.unmarshalSpem = function unmarshalSpem(spem) {
-  arguguard('unmarshalSpem', [Amorph], arguments)
+  arguguard('unmarshalSpem', ['Amorph'], arguments)
   return {
     sender: spem.as('array', (array) => {
       return array.slice(0, 20)
