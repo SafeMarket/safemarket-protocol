@@ -1,18 +1,101 @@
 const arguguard = require('arguguard')
-const protobufjs = require('protobufjs')
-const protofile = require('./safemarket.proto')
 const keccak256 = require('keccak256-amorph')
 const secp256k1 = require('secp256k1-amorph-utils')
 const EC = require('elliptic').ec
 const aes = require('aes-128-cbc-amorph')
-const protomorph = require('protomorph')
+const Amorph = require('amorph')
+const util = require('util')
 
-const protoRoot = protobufjs.parse(protofile).root
-const storeProtoType = protoRoot.lookup('safemarket.Store')
-const orderProtoType = protoRoot.lookup('safemarket.Order')
+const Dictionary = require('hendricks/lib/Dictionary')
+const Split = require('hendricks/lib/Split')
+const Fixed = require('hendricks/lib/Fixed')
+const Dynamic = require('hendricks/lib/Dynamic')
+const List = require('hendricks/lib/List')
+
+const nameTemplate = new Dynamic('name', 1)
+const infoTemplate = new Dynamic('info', 2)
+const priceTemplate = new Dynamic('price', 1)
+
+const storeTemplate = new Split('version', 1, ['v0'], [
+  new Dictionary('store', [
+    new Fixed('publicKey', 33),
+    nameTemplate,
+    new Dynamic('contact', 1),
+    new Dynamic('tagline', 1),
+    new Fixed('isOpen', 1),
+    new Fixed('base', 2),
+    infoTemplate,
+    new Fixed('priceSetter', 20),
+    new Fixed('currency', 4),
+    new Dynamic('bufferMicroperun', 3),
+    new Dynamic('minProductsTotal', 1),
+    new List('products', 2, new Dictionary('product', [
+      nameTemplate,
+      priceTemplate,
+      infoTemplate,
+      new List('imageMultihashes', 1, new Dynamic('imageMultihash', 1))
+    ])),
+    new List('transports', 1, new Dictionary('transport', [
+      nameTemplate,
+      priceTemplate,
+      infoTemplate,
+      new Fixed('to', 2)
+    ]))
+  ])
+])
+
+const orderTemplate = new Split('version', 1, ['v0'], [
+  new Dictionary('order', [
+    new Fixed('storeMetaHash', 32),
+    new Fixed('transportId', 1),
+    infoTemplate,
+    new List('products', 1,
+      new Dictionary('product', [
+        new Fixed('id', 2),
+        new Fixed('quantity', 1)
+      ])
+    )
+  ])
+])
 
 const ec = new EC('secp256k1')
 const postiveCompressedPublicKeyPrefix = 0x03
+
+function crawl(thing, callback) {
+  switch (thing.constructor.name) {
+    case 'Array': {
+      return thing.map((thang) => {
+        return crawl(thang, callback)
+      })
+    } case 'Object': {
+      const object = {}
+      Object.keys(thing).forEach((key) => {
+        object[key] = crawl(thing[key], callback)
+      })
+      return object
+    }
+    default:
+      return callback(thing)
+  }
+}
+
+function amorphify(object) {
+  return crawl(object, (thing) => {
+    if (typeof thing === 'string') {
+      return thing
+    }
+    return new Amorph(thing, 'uint8Array')
+  })
+}
+
+function unamorphify(object) {
+  return crawl(object, (thing) => {
+    if (typeof thing === 'string') {
+      return thing
+    }
+    return thing.to('uint8Array')
+  })
+}
 
 exports.checkLength = function checkLength(amorph, length) {
   arguguard('checkLength', ['Amorph', 'number'], arguments)
@@ -23,17 +106,22 @@ exports.checkLength = function checkLength(amorph, length) {
 
 exports.marshalStoreMeta = function marshalStoreMeta(object) {
   arguguard('marshalStoreMeta', ['Object'], arguments)
-  return protomorph.encode(storeProtoType, object)
+  return new Amorph(storeTemplate.encode(unamorphify(object)), 'uint8Array')
 }
 
 exports.unmarshalStoreMeta = function unmarshalStoreMeta(marshalledStoreMeta) {
   arguguard('marshalStoreMeta', ['Amorph'], arguments)
-  return protomorph.decode(storeProtoType, marshalledStoreMeta)
+  return amorphify(storeTemplate.decode(marshalledStoreMeta.to('uint8Array')))
 }
 
 exports.marshalOrderMeta = function marshalOrderMeta(object) {
   arguguard('marshalOrderMeta', ['Object'], arguments)
-  return protomorph.encode(orderProtoType, object)
+  return new Amorph(orderTemplate.encode(unamorphify(object)), 'uint8Array')
+}
+
+exports.unmarshalOrderMeta = function unmarshalOrderMeta(marshalledOrderMeta) {
+  arguguard('unmarshalOrderMeta', ['Amorph'], arguments)
+  return amorphify(orderTemplate.decode(marshalledOrderMeta.to('uint8Array')))
 }
 
 exports.encrypt = function encrypt(plaintext, key, iv) {
@@ -80,9 +168,9 @@ exports.unencapsulate = function unencapsulate(encapsulation) {
 
 exports.calculatePrebufferCURR = function calculatePrebufferCURR(storeMeta, orderMeta) {
   arguguard('calculatePrebufferCURR', ['Object', 'Object'], arguments)
-  const transportPrice = storeMeta.transports[orderMeta.transportId.to('number')].price
-  const productPrices = orderMeta.products.map((orderProduct) => {
-    const product = storeMeta.products[orderProduct.id.to('number')]
+  const transportPrice = storeMeta.value.transports[orderMeta.value.transportId.to('number')].price
+  const productPrices = orderMeta.value.products.map((orderProduct) => {
+    const product = storeMeta.value.products[orderProduct.id.to('number')]
     return product.price.as('bignumber', (bignumber) => {
       return bignumber.times(orderProduct.quantity.to('bignumber'))
     })
@@ -92,11 +180,6 @@ exports.calculatePrebufferCURR = function calculatePrebufferCURR(storeMeta, orde
       return bignumber.plus(b.to('bignumber'))
     })
   }, transportPrice)
-}
-
-exports.unmarshalOrderMeta = function unmarshalOrderMeta(marshalledStoreMeta) {
-  arguguard('unmarshalOrderMeta', ['Amorph'], arguments)
-  return protomorph.decode(orderProtoType, marshalledStoreMeta)
 }
 
 exports.deriveLinkedAddress = function deriveLinkedAddress(link, publicKey) {

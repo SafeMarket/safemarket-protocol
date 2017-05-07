@@ -57,49 +57,49 @@ describe('Store', () => {
   })
 
   it('unmarshalledStoreMeta should have correct values', () => {
-    unmarshalledStoreMeta.should.have.keys(Object.keys(storeParams))
-    unmarshalledStoreMeta.version.to('number').should.equal(0)
-    unmarshalledStoreMeta.publicKey.should.amorphEqual(accounts.store.compressedPublicKey)
-    unmarshalledStoreMeta.minProductsTotal.should.amorphEqual(storeParams.minProductsTotal)
-    unmarshalledStoreMeta.priceSetter.should.amorphEqual(storeParams.priceSetter)
-    unmarshalledStoreMeta.currency.should.amorphEqual(storeParams.currency)
-    unmarshalledStoreMeta.bufferMicroperun.should.amorphEqual(storeParams.bufferMicroperun)
-    unmarshalledStoreMeta.products.should.have.length(2)
-    unmarshalledStoreMeta.products[0].should.have.keys([
+    unmarshalledStoreMeta.branch.should.equal('v0')
+    unmarshalledStoreMeta.value.should.have.keys(Object.keys(storeParams.value))
+    unmarshalledStoreMeta.value.publicKey.should.amorphEqual(accounts.store.compressedPublicKey)
+    unmarshalledStoreMeta.value.minProductsTotal.should.amorphEqual(storeParams.value.minProductsTotal)
+    unmarshalledStoreMeta.value.priceSetter.should.amorphEqual(storeParams.value.priceSetter)
+    unmarshalledStoreMeta.value.currency.should.amorphEqual(storeParams.value.currency)
+    unmarshalledStoreMeta.value.bufferMicroperun.should.amorphEqual(storeParams.value.bufferMicroperun)
+    unmarshalledStoreMeta.value.products.should.have.length(2)
+    unmarshalledStoreMeta.value.products[0].should.have.keys([
       'name',
       'price',
       'info',
       'imageMultihashes'
     ])
-    unmarshalledStoreMeta.products[0].name.should.amorphEqual(storeParams.products[0].name)
-    unmarshalledStoreMeta.products[0].price.should.amorphEqual(storeParams.products[0].price)
-    unmarshalledStoreMeta.products[0].imageMultihashes.should.have.length(3)
-    unmarshalledStoreMeta.products[0].imageMultihashes[1].should.amorphEqual(storeParams.products[0].imageMultihashes[1])
-    unmarshalledStoreMeta.products[1].should.have.keys([
+    unmarshalledStoreMeta.value.products[0].name.should.amorphEqual(storeParams.value.products[0].name)
+    unmarshalledStoreMeta.value.products[0].price.should.amorphEqual(storeParams.value.products[0].price)
+    unmarshalledStoreMeta.value.products[0].imageMultihashes.should.have.length(3)
+    unmarshalledStoreMeta.value.products[0].imageMultihashes[1].should.amorphEqual(storeParams.value.products[0].imageMultihashes[1])
+    unmarshalledStoreMeta.value.products[1].should.have.keys([
       'name',
       'price',
       'info',
       'imageMultihashes'
     ])
-    unmarshalledStoreMeta.products[1].name.should.amorphEqual(storeParams.products[1].name)
-    unmarshalledStoreMeta.products[1].price.should.amorphEqual(storeParams.products[1].price)
-    unmarshalledStoreMeta.products[1].imageMultihashes.should.have.length(0)
-    unmarshalledStoreMeta.products[1].should.have.keys([
+    unmarshalledStoreMeta.value.products[1].name.should.amorphEqual(storeParams.value.products[1].name)
+    unmarshalledStoreMeta.value.products[1].price.should.amorphEqual(storeParams.value.products[1].price)
+    unmarshalledStoreMeta.value.products[1].imageMultihashes.should.have.length(0)
+    unmarshalledStoreMeta.value.products[1].should.have.keys([
       'name',
       'price',
       'info',
       'imageMultihashes'
     ])
-    unmarshalledStoreMeta.transports.should.have.length(2)
-    unmarshalledStoreMeta.transports[0].should.have.keys([
+    unmarshalledStoreMeta.value.transports.should.have.length(2)
+    unmarshalledStoreMeta.value.transports[0].should.have.keys([
       'name',
       'to',
       'price',
       'info'
     ])
-    unmarshalledStoreMeta.transports[0].name.should.amorphEqual(storeParams.transports[0].name)
-    unmarshalledStoreMeta.transports[0].price.should.amorphEqual(storeParams.transports[0].price)
-    unmarshalledStoreMeta.transports[1].should.have.keys([
+    unmarshalledStoreMeta.value.transports[0].name.should.amorphEqual(storeParams.value.transports[0].name)
+    unmarshalledStoreMeta.value.transports[0].price.should.amorphEqual(storeParams.value.transports[0].price)
+    unmarshalledStoreMeta.value.transports[1].should.have.keys([
       'name',
       'to',
       'price',

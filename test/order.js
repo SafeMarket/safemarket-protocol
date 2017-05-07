@@ -100,7 +100,7 @@ describe('order', () => {
     })
 
     it('should derive orderKey', () => {
-      orderKey = utils.deriveBilateralKey(accounts.default.privateKey, unmarshalledStoreMeta.publicKey)
+      orderKey = utils.deriveBilateralKey(accounts.default.privateKey, unmarshalledStoreMeta.value.publicKey)
     })
 
     it('should derive orderId', () => {
@@ -108,19 +108,19 @@ describe('order', () => {
     })
 
     it('should compute store linkedAddress', () => {
-      linkedStoreAddress = utils.deriveLinkedAddress(orderKey, unmarshalledStoreMeta.publicKey)
+      linkedStoreAddress = utils.deriveLinkedAddress(orderKey, unmarshalledStoreMeta.value.publicKey)
     })
 
     it('should compute affiliate linkedAddress', () => {
       const bilateralKey = utils.deriveBilateralKey(accounts.default.privateKey, accounts.affiliate.compressedPublicKey)
       linkedAffiliateAddress = utils.deriveLinkedAddress(
         bilateralKey,
-        unmarshalledStoreMeta.publicKey
+        unmarshalledStoreMeta.value.publicKey
       )
     })
 
     it('should create an order meta', () => {
-      orderParams.storeMetaHash = storeMetaHash
+      orderParams.value.storeMetaHash = storeMetaHash
       marshalledOrderMeta = utils.marshalOrderMeta(orderParams)
     })
 
@@ -136,7 +136,7 @@ describe('order', () => {
     })
 
     it('should get store currency price', () => {
-      return orderReg.fetch('prices(address,bytes4)', [unmarshalledStoreMeta.priceSetter, unmarshalledStoreMeta.currency]).then((_storeCurrencyPrice) => {
+      return orderReg.fetch('prices(address,bytes4)', [unmarshalledStoreMeta.value.priceSetter, unmarshalledStoreMeta.value.currency]).then((_storeCurrencyPrice) => {
         storeCurrencyPrice = _storeCurrencyPrice
         storeCurrencyPrice.should.not.amorphEqual(zero)
       })
@@ -166,8 +166,8 @@ describe('order', () => {
         utils.stripCompressedPublicKey(accounts.default.compressedPublicKey),
         linkedStoreAddress,
         linkedAffiliateAddress,
-        unmarshalledStoreMeta.priceSetter,
-        unmarshalledStoreMeta.currency,
+        unmarshalledStoreMeta.value.priceSetter,
+        unmarshalledStoreMeta.value.currency,
         prebufferCURR,
         encapsulatedOrderMeta
       ], {
@@ -191,8 +191,8 @@ describe('order', () => {
       order.buyer.should.amorphEqual(accounts.default.address)
       order.store.should.amorphEqual(linkedStoreAddress)
       order.affiliate.should.amorphEqual(linkedAffiliateAddress)
-      order.priceSetter.should.amorphEqual(unmarshalledStoreMeta.priceSetter)
-      order.currency.should.amorphEqual(unmarshalledStoreMeta.currency)
+      order.priceSetter.should.amorphEqual(unmarshalledStoreMeta.value.priceSetter)
+      order.currency.should.amorphEqual(unmarshalledStoreMeta.value.currency)
       order.prebufferCURR.should.amorphEqual(prebufferCURR)
       order.value.should.amorphEqual(value)
     })
@@ -220,25 +220,25 @@ describe('order', () => {
       unmarshalledOrderMeta = utils.unmarshalOrderMeta(marshalledOrderMeta)
     })
     it('unmarshalled order meta should have correct values', () => {
-      const keys = Object.keys(orderParams)
-      unmarshalledOrderMeta.should.have.keys(keys)
+      const keys = Object.keys(orderParams.value)
+      unmarshalledOrderMeta.value.should.have.keys(keys)
       keys.forEach((key) => {
-        if (orderParams[key] instanceof Array) {
+        if (orderParams.value[key] instanceof Array) {
           return
         }
-        return unmarshalledOrderMeta[key].should.amorphEqual(orderParams[key])
+        return unmarshalledOrderMeta.value[key].should.amorphEqual(orderParams.value[key])
       })
-      unmarshalledOrderMeta.products.should.have.length(orderParams.products.length)
-      unmarshalledOrderMeta.products.forEach((product, index) => {
-        const productKeys = Object.keys(orderParams.products[index])
+      unmarshalledOrderMeta.value.products.should.have.length(orderParams.value.products.length)
+      unmarshalledOrderMeta.value.products.forEach((product, index) => {
+        const productKeys = Object.keys(orderParams.value.products[index])
         product.should.have.keys(productKeys)
         productKeys.forEach((key) => {
-          product[key].should.amorphEqual(orderParams.products[index][key])
+          product[key].should.amorphEqual(orderParams.value.products[index][key])
         })
       })
     })
     it('should have correct store meta hash', () => {
-      unmarshalledOrderMeta.storeMetaHash.should.amorphEqual(storeMetaHash)
+      unmarshalledOrderMeta.value.storeMetaHash.should.amorphEqual(storeMetaHash)
     })
     it('should have correct prebufferCURR', () => {
       order.prebufferCURR.should.amorphEqual(utils.calculatePrebufferCURR(unmarshalledStoreMeta, unmarshalledOrderMeta))
