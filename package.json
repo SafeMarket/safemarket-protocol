@@ -10,10 +10,6 @@
   "license": "MIT",
   "devDependencies": {
     "amorph": "^2.0.2",
-    "amorph-base58": "^1.0.0",
-    "amorph-bignumber": "^1.0.0",
-    "amorph-bn": "0.0.1",
-    "amorph-buffer": "^1.2.0",
     "babel-eslint": "^7.1.1",
     "bignumber": "^1.1.0",
     "bitcore-lib": "^0.13.19",
@@ -50,6 +46,9 @@
   "dependencies": {
     "aes-128-cbc-amorph": "0.0.3",
     "amorph-bignumber": "^1.1.0",
+    "amorph-base58": "^1.0.0",
+    "amorph-bignumber": "^1.0.0",
+    "amorph-bn": "0.0.1",
     "amorph-buffer": "^1.3.0",
     "amorph-parse-solc-output": "^0.1.0",
     "arguguard": "^2.1.1",
