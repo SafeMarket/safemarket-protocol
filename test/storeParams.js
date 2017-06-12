@@ -1,4 +1,4 @@
-const Amorph = require('../modules/Amorph')
+const Amorph = require('./Amorph')
 const accounts = require('./accounts')
 
 const currency = new Amorph('USD6', 'ascii')

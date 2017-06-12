@@ -1,9 +1,9 @@
-const contracts = require('../modules/contracts')
+const contracts = require('./contracts')
 const Q = require('q')
 const ultralightbeam = require('./ultralightbeam')
 const accounts = require('./accounts')
-const Amorph = require('../modules/Amorph')
-const random = require('./random')
+const Amorph = require('./Amorph')
+const random = require('random-amorph')
 const planetoidPromise = require('./planetoid')
 const defaultBalance = require('./defaultBalance')
 const utils = require('../')
@@ -17,12 +17,12 @@ module.exports = deferred.promise
 describe('OrderReg', () => {
 
   const zero = new Amorph(0, 'number')
-  const orderId = random(32)
+  const orderId = random(Amorph, 32)
   const currency = new Amorph('USD6', 'ascii')
-  const prebufferCURR = random(32)
-  const encapsulatedOrderMeta = random(128)
-  const affiliate = random(20)
-  const payoutAddress = random(20)
+  const prebufferCURR = random(Amorph, 32)
+  const encapsulatedOrderMeta = random(Amorph, 128)
+  const affiliate = random(Amorph, 20)
+  const payoutAddress = random(Amorph, 20)
 
   let orderReg
   let planetoid

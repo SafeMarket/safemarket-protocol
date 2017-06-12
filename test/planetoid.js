@@ -1,4 +1,4 @@
-const contracts = require('../modules/contracts')
+const contracts = require('./contracts')
 const Q = require('q')
 const ultralightbeam = require('./ultralightbeam')
 const _ = require('lodash')
@@ -15,10 +15,10 @@ describe('Planetoid', () => {
 
   let planetoid
   const documents = _.range(10).map(() => {
-    return random(Math.ceil(Math.random() * 256))
+    return random(ultralightbeam.Amorph, Math.ceil(Math.random() * 256))
   })
   const values = _.range(10).map(() => {
-    return random(6)
+    return random(ultralightbeam.Amorph, 6)
   })
   const records = []
   const timestamps = _.range(10)

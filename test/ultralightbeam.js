@@ -2,12 +2,10 @@ const Ultralightbeam = require('ultralightbeam')
 const provider = require('./provider')
 const accounts = require('./accounts')
 const Q = require('q')
-const BigNumber = require('bignumber.js')
-const Amorph = require('../modules/Amorph')
+const Amorph = require('./Amorph')
 
-const gasLimit = 4000000
 
-const ultralightbeam = new Ultralightbeam(provider, {
+const ultralightbeam = new Ultralightbeam(provider, Amorph, {
   arguguard: {
     allowSynonymousConstructors: true
   },

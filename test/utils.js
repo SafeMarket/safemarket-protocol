@@ -1,5 +1,6 @@
 const utils = require('../')
 const random = require('random-amorph')
+const Amorph = require('./Amorph')
 
 describe('encryption/encapsulation', () => {
   const keySizes = [16, 32]
@@ -10,9 +11,9 @@ describe('encryption/encapsulation', () => {
     describe(`key size: ${keySize}`, () => {
       plaintextSizes.forEach((plaintextSize, index) => {
         describe(`plaintext size: ${keySize}`, () => {
-          const key = random(keySize)
-          const iv = random(16)
-          const plaintext = random(plaintextSize)
+          const key = random(Amorph, keySize)
+          const iv = random(Amorph, 16)
+          const plaintext = random(Amorph, plaintextSize)
           let ciphertext
           let encapsulation
           let unencapsulation

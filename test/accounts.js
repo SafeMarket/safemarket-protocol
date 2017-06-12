@@ -1,9 +1,10 @@
+const Amorph = require('./Amorph')
 const Account = require('ethereum-account-amorph')
 
 module.exports = {
-  default: Account.generatePositive(),
-  store: Account.generatePositive(),
-  arbitrator: Account.generatePositive(),
-  affiliate: Account.generatePositive(),
-  tempStore: Account.generatePositive()
+  default: Account.generatePositive(Amorph),
+  store: Account.generatePositive(Amorph),
+  arbitrator: Account.generatePositive(Amorph),
+  affiliate: Account.generatePositive(Amorph),
+  tempStore: Account.generatePositive(Amorph)
 }

@@ -20,7 +20,7 @@ describe('order', () => {
 
   const storeAlias = new Amorph('mystore', 'ascii')
   const zero = new Amorph(0, 'number')
-  const payoutAddress = random(20)
+  const payoutAddress = random(Amorph, 20)
 
   let storeReg
   let orderReg
@@ -125,7 +125,7 @@ describe('order', () => {
     })
 
     it('should encrypt/encapsulate orderMeta', () => {
-      const iv = random(16)
+      const iv = random(Amorph, 16)
       const encryptedOrderMeta = utils.encrypt(marshalledOrderMeta, orderKey, iv)
       encapsulatedOrderMeta = utils.encapsulate(encryptedOrderMeta, iv)
     })
@@ -268,7 +268,7 @@ describe('order', () => {
     })
     it('add a new message (as store)', () => {
       message1 = new Amorph('Received it. Thanks!', 'ascii')
-      const iv = random(16)
+      const iv = random(Amorph, 16)
       const encryptedMessage1 = utils.encrypt(message1, orderKey, iv)
       encapsulatedMessage1 = utils.encapsulate(encryptedMessage1, iv)
       return orderReg.broadcast('addMessage(bytes32,bytes)', [
@@ -277,7 +277,7 @@ describe('order', () => {
     })
     it('add a new message (as buyer)', () => {
       message2 = new Amorph('Received it. Thanks!', 'ascii')
-      const iv = random(16)
+      const iv = random(Amorph, 16)
       const encryptedMessage2 = utils.encrypt(message2, orderKey, iv)
       encapsulatedMessage2 = utils.encapsulate(encryptedMessage2, iv)
       return orderReg.broadcast('addMessage(bytes32,bytes)', [

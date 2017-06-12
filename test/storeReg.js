@@ -1,10 +1,8 @@
-const contracts = require('../modules/contracts')
+const contracts = require('./contracts')
 const Q = require('q')
 const ultralightbeam = require('./ultralightbeam')
-const SolDeployTranasctionRequest = require('ultralightbeam/lib/SolDeployTransactionRequest')
-const SolWrapper = require('ultralightbeam/lib/SolWrapper')
 const accounts = require('./accounts')
-const Amorph = require('../modules/Amorph')
+const Amorph = require('./Amorph')
 const random = require('random-amorph')
 const planetoidPromise = require('./planetoid')
 const planetoidUtils = require('planetoid-utils')
@@ -15,7 +13,7 @@ module.exports = deferred.promise
 
 describe('StoreReg', () => {
 
-  const meta = random(120)
+  const meta = random(Amorph, 120)
   let planetoid
   let storeReg
   let user

@@ -3,8 +3,6 @@ const keccak256 = require('keccak256-amorph')
 const secp256k1 = require('secp256k1-amorph-utils')
 const EC = require('elliptic').ec
 const aes = require('aes-128-cbc-amorph')
-const Amorph = require('amorph')
-const util = require('util')
 
 const Dictionary = require('hendricks/lib/Dictionary')
 const Split = require('hendricks/lib/Split')
@@ -62,6 +60,7 @@ const ec = new EC('secp256k1')
 const postiveCompressedPublicKeyPrefix = 0x03
 
 function crawl(thing, callback) {
+  arguguard('crawk', ['*', 'function'], arguments)
   switch (thing.constructor.name) {
     case 'Array': {
       return thing.map((thang) => {
@@ -80,15 +79,17 @@ function crawl(thing, callback) {
 }
 
 function amorphify(object) {
+  arguguard('amorphify', ['*'], arguments)
   return crawl(object, (thing) => {
     if (typeof thing === 'string') {
       return thing
     }
-    return new Amorph(thing, 'uint8Array')
+    return new exports.Amorph(thing, 'uint8Array')
   })
 }
 
 function unamorphify(object) {
+  arguguard('unamorphify', ['*'], arguments)
   return crawl(object, (thing) => {
     if (typeof thing === 'string') {
       return thing
@@ -106,7 +107,7 @@ exports.checkLength = function checkLength(amorph, length) {
 
 exports.marshalStoreMeta = function marshalStoreMeta(object) {
   arguguard('marshalStoreMeta', ['Object'], arguments)
-  return new Amorph(storeTemplate.encode(unamorphify(object)), 'uint8Array')
+  return new exports.Amorph(storeTemplate.encode(unamorphify(object)), 'uint8Array')
 }
 
 exports.unmarshalStoreMeta = function unmarshalStoreMeta(marshalledStoreMeta) {
@@ -116,7 +117,7 @@ exports.unmarshalStoreMeta = function unmarshalStoreMeta(marshalledStoreMeta) {
 
 exports.marshalOrderMeta = function marshalOrderMeta(object) {
   arguguard('marshalOrderMeta', ['Object'], arguments)
-  return new Amorph(orderTemplate.encode(unamorphify(object)), 'uint8Array')
+  return new exports.Amorph(orderTemplate.encode(unamorphify(object)), 'uint8Array')
 }
 
 exports.unmarshalOrderMeta = function unmarshalOrderMeta(marshalledOrderMeta) {
